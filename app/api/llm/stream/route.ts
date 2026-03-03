@@ -1,0 +1,84 @@
+import { NextResponse } from "next/server"
+import { z } from "zod"
+import type { GenerationRequest } from "@/features/generation/types"
+import { assertByokPolicy } from "@/lib/auth/byok-policy"
+import { getProviderAdapter } from "@/lib/providers/registry"
+import { encodeSseEvent, encodeSsePing } from "@/lib/sse/events"
+import { toErrorEnvelope } from "@/lib/sse/error-envelope"
+
+const requestSchema = z.object({
+  provider: z.enum(["openai", "anthropic", "gemini", "openrouter", "github-models"]),
+  model: z.string().min(1),
+  intent: z.enum(["prompt", "explain", "questions", "subtopics"]),
+  messages: z.array(z.object({ role: z.enum(["system", "user", "assistant", "tool"]), content: z.string().min(1) })).min(1),
+  auth: z.object({ type: z.enum(["api-key", "oauth"]), credential: z.string().min(1) }),
+  workspaceContext: z
+    .object({
+      workspaceId: z.string().optional(),
+      canvasId: z.string().optional(),
+      sourceNodeId: z.string().optional()
+    })
+    .optional()
+})
+
+export async function POST(request: Request): Promise<Response> {
+  const requestId = crypto.randomUUID()
+
+  try {
+    const body = await request.json()
+    const parsed = requestSchema.safeParse(body)
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          category: "invalid_request",
+          message: "Invalid stream request payload",
+          retryable: false,
+          requestId
+        },
+        { status: 400 }
+      )
+    }
+
+    const payload = parsed.data as GenerationRequest
+    assertByokPolicy(payload)
+
+    const adapter = getProviderAdapter(payload.provider)
+
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const encoder = new TextEncoder()
+        const timer = setInterval(() => controller.enqueue(encoder.encode(encodeSsePing())), 12000)
+
+        try {
+          for await (const event of adapter.stream(payload)) {
+            controller.enqueue(encoder.encode(encodeSseEvent(event)))
+          }
+        } catch (error) {
+          controller.enqueue(
+            encoder.encode(
+              encodeSseEvent({
+                type: "error",
+                data: { ...toErrorEnvelope(error, requestId) }
+              })
+            )
+          )
+        } finally {
+          clearInterval(timer)
+          controller.close()
+        }
+      }
+    })
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive"
+      }
+    })
+  } catch (error) {
+    const envelope = toErrorEnvelope(error, requestId)
+    return NextResponse.json(envelope, { status: envelope.category === "auth" ? 401 : 500 })
+  }
+}

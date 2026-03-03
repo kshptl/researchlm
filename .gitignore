@@ -1,0 +1,22 @@
+node_modules/
+.next/
+dist/
+build/
+coverage/
+*.log
+.env*
+
+# Editors/OS
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+
+# Tests
+playwright-report/
+test-results/
+
+# Local tool folders
+.opencode/

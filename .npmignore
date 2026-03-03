@@ -1,0 +1,8 @@
+specs/
+tasks/
+.specify/
+.opencode/
+*.pdf
+playwright-report/
+test-results/
+coverage/

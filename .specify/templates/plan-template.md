@@ -31,7 +31,16 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **Code Quality**: Define linting, formatting, static analysis, and maintainability
+  expectations for affected modules.
+- **Testing Standards**: Define required test layers (unit, integration, contract/e2e)
+  and regression tests for bug fixes.
+- **UX Consistency**: Identify impacted user flows, shared components/tokens, and
+  accessibility or content consistency checks.
+- **Performance Requirements**: State measurable budgets (latency, throughput,
+  memory/CPU as applicable) and how they will be validated.
+- **Evidence Plan**: List commands, benchmarks, and artifacts that will prove
+  compliance before merge.
 
 ## Project Structure
 
