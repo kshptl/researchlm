@@ -29,6 +29,7 @@
 - Q: How should generated subtopics become hierarchy canvases? → A: Show generated subtopic candidates and require explicit user selection for which candidates become child canvases with hierarchy links and portal nodes.
 - Q: How should US4 acceptance criteria cover recovery and conflict behaviors? → A: Add separate acceptance scenarios for backup import/export recovery and for visible cross-tab conflict notifications.
 - Q: What contrast standard should node visuals meet? → A: Node labels/text and key node-state indicators must meet WCAG 2.1 AA contrast requirements.
+- Q: How should visual quality and UI appeal be validated for release readiness? → A: Require merge-blocking visual regression tests plus rubric-based design review sign-off mapped to all FR and User Story visual states.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -65,6 +66,7 @@ As a knowledge worker researching a complex topic, I can create topic nodes on a
 8. **Given** nodes of each required type (`topic`, `generated`, `question`, `summary`, `keyword`, `portal`), **When** they are rendered on the canvas, **Then** each type displays a distinct icon, color token, and visible type label/header.
 9. **Given** a user extracts highlighted text, **When** the selected span is shorter than 3 non-whitespace characters, **Then** extraction is rejected with a non-blocking message, and **When** the selected span is longer than 5000 characters, **Then** extraction is rejected with a non-blocking message that states the maximum allowed span.
 10. **Given** any expansion action returns empty, repetitive, off-topic, or malformed output, **When** the result is processed, **Then** no new node or child canvas is auto-created and a non-blocking quality notice offers retry, action-change, or dismiss options.
+11. **Given** default and active exploration states, **When** the workspace renders in supported desktop browsers, **Then** visual regression snapshots for layout, node styling, generation actions, and failure notices match approved baselines.
 
 ---
 
@@ -83,6 +85,7 @@ As a knowledge worker, I can move between canvas view and hierarchy view, add br
 3. **Given** generated subtopic candidates are available, **When** a user selects specific candidates for expansion, **Then** only the selected candidates become child canvases with corresponding hierarchy links and portal nodes.
 4. **Given** a node already has a semantic-dive child canvas, **When** the user triggers semantic dive again on the same node, **Then** the existing child canvas is reused by default and duplicate hierarchy links are not created.
 5. **Given** generated subtopic candidates are presented, **When** a user dismisses selected candidates and later reloads the workspace, **Then** dismissed and pending candidate states remain consistent until the user clears them or completes expansion.
+6. **Given** hierarchy creation and navigation interactions, **When** canvases and candidate states change, **Then** visual regression snapshots for hierarchy structure, active-state emphasis, and candidate lifecycle chips match approved baselines.
 
 ---
 
@@ -98,6 +101,7 @@ As a knowledge worker, I can switch node detail levels (full, lines, summary, ke
 
 1. **Given** a dense canvas with many long response nodes, **When** a user zooms out with automatic semantic detail enabled, **Then** node content shifts to lower-detail representations and remains legible at overview scale.
 2. **Given** a node with available semantic representations, **When** a user manually selects a specific detail level, **Then** that representation persists until the user changes it again.
+3. **Given** semantic mode changes (auto/manual and level selection), **When** zoom and manual controls are used, **Then** visual regression snapshots for semantic badges, node text representations, and selector affordances match approved baselines.
 
 ---
 
@@ -117,6 +121,7 @@ As a returning user, I can reopen a workspace and continue from my prior canvase
 4. **Given** a backup import contains valid and invalid segments, **When** import recovery runs, **Then** the system restores valid segments, skips invalid segments, and presents a recovery summary with restored/skipped counts and reasons.
 5. **Given** active workspace state and recent snapshots are unreadable, **When** the user reopens the workspace, **Then** the system enters a recovery-required state with explicit actions to import a backup or create a new workspace.
 6. **Given** near-simultaneous edits occur across tabs on different entity types, **When** reconciliation runs, **Then** conflict resolution applies per entity using the same deterministic tie-break order and preserves referential integrity across nodes, edges, canvases, and hierarchy links.
+7. **Given** persistence, recovery, and credential lifecycle states, **When** conflict/recovery/auth flows are triggered, **Then** visual regression snapshots for conflict notices, recovery-required UI, and credential actions match approved baselines.
 
 ### Edge Cases
 
@@ -169,6 +174,25 @@ As a returning user, I can reopen a workspace and continue from my prior canvase
 - **FR-031**: Repeated semantic dive on the same source node MUST reuse the existing child canvas by default and MUST NOT create duplicate hierarchy links unless the user explicitly chooses a separate "create additional child canvas" action.
 - **FR-032**: Cross-tab last-write-wins reconciliation MUST use deterministic per-entity ordering (`updatedAtMs`, then `tabId` lexical order as tie-break) and MUST preserve referential integrity across related entities after reconciliation.
 - **FR-033**: If any expansion action result is empty, repetitive beyond the documented uniqueness policy, significantly off-topic relative to the source node intent, or structurally malformed for its expected output form, the system MUST not auto-create result nodes/canvases and MUST emit a non-blocking quality notice with options to retry, change expansion action, or dismiss. The documented uniqueness policy MUST define default thresholds (`minUniqueItemRatio = 0.70`, `maxDuplicateItemRatio = 0.30`) in `/home/kush/researchlm/specs/001-build-sensecape-app/measurement-protocol.md`, where ratios are item-based (`uniqueItemRatio = uniqueNormalizedItems / totalItems`, `duplicateItemRatio = duplicateNormalizedItems / totalItems`) after trim+casefold normalization. Off-topic MUST be evaluated using `keywordCoverage = matchedSourceKeywords / requiredSourceKeywords`, and output is off-topic when `keywordCoverage < 0.50`. `requiredSourceKeywords` MUST be derived deterministically from the source node text by trim+casefold normalization and punctuation removal, then selecting the first 10 unique tokens with length >= 4 in source order (no stopword-removal step in v1); `matchedSourceKeywords` counts exact normalized token matches found in generated output.
+- **FR-034**: The system MUST maintain visual regression coverage for all User Stories and FR-linked user-visible UI states. Each covered state MUST have a canonical `VS-###` ID in `/home/kush/researchlm/specs/001-build-sensecape-app/visual-coverage-matrix.md` and at least one baseline artifact reference per supported browser project.
+- **FR-035**: Visual regression tests MUST run as merge-blocking CI checks on supported desktop browser projects with deterministic rendering controls: fixed viewport (1440x900), `deviceScaleFactor=1`, locale `en-US`, timezone `UTC`, reduced-motion mode, deterministic font loading, and masking of approved dynamic regions. Visual diff pass criteria MUST be defined in `/home/kush/researchlm/specs/001-build-sensecape-app/measurement-protocol.md` and enforced in CI.
+- **FR-036**: Any baseline snapshot update MUST include approval metadata in `/home/kush/researchlm/specs/001-build-sensecape-app/checklists/visual-review.md` with fields: `reviewId`, `reviewer`, `reviewedAt`, `linkedFRs`, `linkedUserStories`, `changedVSIds`, and `rationale`.
+- **FR-037**: The UI MUST satisfy a design-review rubric covering visual hierarchy, readability, spacing consistency, color harmony, and affordance clarity, with thresholds defined in `/home/kush/researchlm/specs/001-build-sensecape-app/measurement-protocol.md`.
+
+### Visual Acceptance State Inventory (Canonical)
+
+- **VS-001**: Workspace default (three panes visible, no selection).
+- **VS-002**: Node selected with inspector details visible.
+- **VS-003**: Generation actions visible (`prompt`, `explain`, `questions`, `subtopics`).
+- **VS-004**: Generation failure notice (non-blocking, actionable).
+- **VS-005**: Hierarchy view with active-canvas emphasis.
+- **VS-006**: Subtopic candidate lifecycle (`presented`, `selected`, `dismissed`, `pending`).
+- **VS-007**: Semantic auto mode at low zoom.
+- **VS-008**: Semantic manual `keywords` mode.
+- **VS-009**: Persistence controls panel (`snapshot`, `export`, `import`).
+- **VS-010**: Conflict notice visible.
+- **VS-011**: Recovery-required state.
+- **VS-012**: Unsupported viewport guidance state.
 
 ### Assumptions
 
@@ -200,6 +224,8 @@ As a returning user, I can reopen a workspace and continue from my prior canvase
 - End-to-end acceptance tests MUST verify that a user can start from a blank workspace and complete one full exploration-and-sensemaking cycle.
 - The repository verification pipeline MUST pass lint, formatting check, static analysis/typecheck, required test suites, build, and end-to-end tests before merge, and MUST include practical performance budget checks for affected hot paths.
 - Practical performance budget checks MUST include artifacts for p95 node interaction latency, p95 hierarchy/canvas switch latency, and p95 generation first-visible-content latency, each with dataset profile and execution metadata sufficient for reruns.
+- Visual regression tests MUST produce baseline/current/diff artifacts for required FR/US states; failed visual diffs MUST block merge unless approved baseline updates are present.
+- Requirement-to-test traceability MUST include visual test IDs and artifact references for every FR and User Story.
 
 ### User Experience Consistency Requirements
 
@@ -210,6 +236,8 @@ As a returning user, I can reopen a workspace and continue from my prior canvase
 - Conflict notifications MUST communicate superseded scope and user action options, and remain visible until dismissal or replacement by a newer conflict event.
 - Keyboard traversal order MUST be deterministic across left hierarchy pane, center canvas/toolbar, and right inspector/actions pane, with no hidden focus traps.
 - Focus MUST restore to the last meaningful trigger element after modal/popover/panel closure and after view transitions that temporarily move focus context.
+- Critical workflows MUST preserve visual consistency of spacing, typography scale, semantic emphasis, and action-affordance prominence across hierarchy, canvas, and inspector panes.
+- User-visible notices (failure, conflict, recovery, unsupported viewport) MUST maintain consistent visual severity hierarchy and readability across supported desktop browsers.
 
 ### Performance Requirements
 
@@ -247,3 +275,6 @@ As a returning user, I can reopen a workspace and continue from my prior canvase
 - **SC-006**: 95% of core interaction actions (node manipulation and view navigation) meet the stated responsiveness targets.
 - **SC-007**: 100% of required test layers (unit, integration, end-to-end acceptance) pass in the continuous verification pipeline.
 - **SC-008**: No critical accessibility issues remain open for keyboard navigation, focus visibility, or actionable error messaging in the defined user flows.
+- **SC-009**: 100% of required visual regression checks pass in CI for release-candidate branches.
+- **SC-010**: 100% of FRs and User Stories are mapped to at least one visual test and baseline artifact in the visual coverage matrix.
+- **SC-011**: Design-review rubric average is >= 4.0/5.0 with no rubric category below 3.5/5.0 on release candidates.

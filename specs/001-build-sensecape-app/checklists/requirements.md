@@ -53,6 +53,6 @@
 
 ## Traceability Completeness
 
-- [x] Every FR-001..FR-033 entry is mapped to at least one task in `specs/001-build-sensecape-app/traceability.md`.
+- [x] Every FR-001..FR-037 entry is mapped to at least one task in `specs/001-build-sensecape-app/traceability.md`.
 - [x] Non-functional requirement groups (Code Quality, Testing & Verification, UX Consistency, Performance) are mapped to task IDs in `specs/001-build-sensecape-app/traceability.md`.
 - [x] No requirement row is left with an empty task mapping.

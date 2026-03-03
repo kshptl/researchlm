@@ -13,6 +13,7 @@
 - **Testing Standards**: PASS - unit/integration/e2e coverage appears per story, with contract tests for cross-boundary interfaces (`T033`, `T034`, `T119`, `T120`).
 - **UX Consistency**: PASS - accessibility, focus order/restoration, terminology, and messaging coverage is explicitly planned (`T124`, `T125`, `T142`, `T149`).
 - **Performance Requirements**: PASS - p95 budget checks and evidence capture tasks are explicitly present (`T121`, `T122`, `T123`, `T128`, `T143`).
+- **Visual Quality**: PASS - deterministic visual-regression coverage and baseline governance tasks are explicitly planned (`T152`-`T168`).
 - **Evidence Plan**: PASS - traceability and verification artifact tasks are explicitly present (`T131`, `T138`, `T144`, `T145`).
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -261,6 +262,32 @@
 
 ---
 
+## Phase 8: Visual Quality & Aesthetic Validation
+
+**Purpose**: Enforce deterministic visual regression and design-quality sign-off across all FR and User Story UI states.
+
+- [ ] T152 [P] Define visual regression contract (viewports, required states, masking, thresholds, baseline governance) in `/home/kush/researchlm/specs/001-build-sensecape-app/contracts/visual-regression-contract.md`
+- [ ] T153 [P] Define visual design-review rubric and approval template in `/home/kush/researchlm/specs/001-build-sensecape-app/checklists/visual-review.md`
+- [ ] T154 [P] Add deterministic visual test helpers in `/home/kush/researchlm/tests/e2e/visual/visual-test-helpers.ts`
+- [ ] T155 Configure Playwright visual snapshot conventions in `/home/kush/researchlm/playwright.config.ts`
+- [ ] T156 Add visual scripts (`test:visual`, `test:visual:update`) in `/home/kush/researchlm/package.json`
+- [ ] T157 [US1] Add US1 visual regression coverage in `/home/kush/researchlm/tests/e2e/visual/us1-visual.spec.ts`
+- [ ] T158 [US2] Add US2 visual regression coverage in `/home/kush/researchlm/tests/e2e/visual/us2-visual.spec.ts`
+- [ ] T159 [US3] Add US3 visual regression coverage in `/home/kush/researchlm/tests/e2e/visual/us3-visual.spec.ts`
+- [ ] T160 [US4] Add US4 visual regression coverage in `/home/kush/researchlm/tests/e2e/visual/us4-visual.spec.ts`
+- [ ] T161 Add FR/US visual coverage matrix with test IDs and baseline references in `/home/kush/researchlm/specs/001-build-sensecape-app/visual-coverage-matrix.md`
+- [ ] T162 Update requirement traceability with visual mappings in `/home/kush/researchlm/specs/001-build-sensecape-app/traceability.md`
+- [ ] T163 Add merge-blocking visual CI workflow with diff artifact upload in `/home/kush/researchlm/.github/workflows/visual-gates.yml`
+- [ ] T164 Update quickstart with visual runbook/baseline update protocol in `/home/kush/researchlm/specs/001-build-sensecape-app/quickstart.md`
+- [ ] T165 Add visual gate and sign-off checklist items in `/home/kush/researchlm/specs/001-build-sensecape-app/checklists/requirements.md`
+- [ ] T166 [P] Implement visual coverage completeness validator for FR/US -> VS mappings and artifact references in `/home/kush/researchlm/scripts/validate-visual-coverage.mjs`
+- [ ] T167 Add visual coverage validation step to merge-blocking visual CI workflow in `/home/kush/researchlm/.github/workflows/visual-gates.yml`
+- [ ] T168 Add release checklist gate requiring successful visual coverage validation and approved baseline-change metadata in `/home/kush/researchlm/specs/001-build-sensecape-app/checklists/requirements.md`
+
+**Checkpoint**: Visual quality is measurable, traceable, and merge-blocking across all FR and User Stories.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -272,6 +299,8 @@
 - **Phase 5 (US3)**: Depends on Phase 2. Can run after US1 node rendering baseline is merged.
 - **Phase 6 (US4)**: Depends on Phase 2. Integrates best after US1 persistence interactions exist.
 - **Phase 7 (Polish)**: Depends on completion of all targeted user stories.
+- **Phase 8 (Visual Quality)**: Depends on Phase 7 and stabilized user-story UI states.
+- **Merge Gate Rule**: For user-facing changes, merge/release-candidate approval is BLOCKED until Phase 8 tasks are complete and visual CI gates pass.
 
 ### User Story Dependency Graph
 
@@ -298,6 +327,7 @@ Recommended completion order: **US1 -> US2 -> US3 -> US4**
 - US3: T084-T088 in parallel for tests; T090-T092 in parallel for semantic modules.
 - US4: T098-T105 in parallel for tests; T107-T111 in parallel for persistence services.
 - Polish: T119-T124, T133-T136, T139-T142, T144, T146, T148, and T149 can run in parallel.
+- Visual phase: T152-T154 and T166 can run in parallel; T157-T160 can run in parallel after T154-T156; T167-T168 can run after T161-T166.
 
 ---
 
@@ -364,6 +394,7 @@ Task: "T111 [US4] /home/kush/researchlm/features/persistence/conflict-events.ts"
 4. Deliver US3 -> validate -> release candidate.
 5. Deliver US4 -> validate -> release candidate.
 6. Run Phase 7 polish and quality/performance evidence.
+7. Block release-candidate/merge until visual gates pass (`T152`-`T168`, including coverage validation and metadata gates).
 
 ### Parallel Team Strategy
 
@@ -374,6 +405,7 @@ Task: "T111 [US4] /home/kush/researchlm/features/persistence/conflict-events.ts"
    - Engineer C: US3
    - Engineer D: US4
 3. Reconcile in Phase 7 with full gate evidence.
+4. Run Phase 8 visual baseline generation/review and CI gate stabilization.
 
 ---
 

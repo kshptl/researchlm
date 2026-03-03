@@ -54,3 +54,36 @@
 - quota/rate-limit status
 - git branch and commit hash
 - scenario label (node-interaction, view-switch, generation-first-visible-content)
+
+## Visual Quality Rubric Thresholds (FR-037 / SC-011)
+
+### Rubric Categories (1.0-5.0 each)
+
+- visualHierarchy
+- readability
+- spacingConsistency
+- colorHarmony
+- affordanceClarity
+
+### Passing Thresholds
+
+- release-candidate rubric average >= 4.0
+- no single category score below 3.5
+
+### Visual Review Record Fields
+
+- reviewId
+- reviewedAt (ISO-8601)
+- reviewer
+- linkedFRs
+- linkedUserStories
+- changedVSIds
+- baselineChangeSummary
+- rationale
+
+## Visual Diff Threshold Policy (FR-035)
+
+- maxDiffPixelRatio: 0.001
+- maxDiffPixels: 200
+- allowed masked regions: timestamps, request IDs, streaming cursor, transient loading indicators
+- failure policy: any threshold violation fails the visual gate

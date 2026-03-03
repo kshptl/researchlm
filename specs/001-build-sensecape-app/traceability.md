@@ -35,6 +35,10 @@
 | FR-031 | T068, T078 | Repeated semantic dive reuse default |
 | FR-032 | T101, T110 | Deterministic per-entity reconciliation ordering |
 | FR-033 | T041, T057, T143, T146, T147 | Shared output quality contract and policy defaults |
+| FR-034 | T152, T157, T158, T159, T160, T161, T162, T166 | Canonical VS-state coverage and FR/US mapping completeness |
+| FR-035 | T152, T154, T155, T163, T167 | Deterministic visual CI gating and threshold enforcement |
+| FR-036 | T153, T165, T168 | Baseline approval metadata governance and release gating |
+| FR-037 | T153, T164, T165 | Visual rubric definition, runbook usage, and sign-off checks |
 | NFR-CQ-001 | T001, T003, T127, T131 | Quality-gate enforcement and recorded verification |
 | NFR-CQ-002 | T054, T077, T090 | Separation of interaction/hierarchy/semantic concerns |
 | NFR-CQ-003 | T012, T130 | Divergence documentation requirements |
