@@ -77,6 +77,8 @@ Implement a desktop-first Sensecape experience with:
 - `npm run test`
 - `npm run build`
 - `npm run test:e2e`
+- `npm run validate:visual-coverage`
+- `npm run test:visual`
 - constitution compliance check across spec/plan/tasks
 
 ## Final Verification Runbook
@@ -89,6 +91,8 @@ Run these commands in order and capture pass/fail output for release evidence:
 4. `npm run test`
 5. `npm run build`
 6. `npm run test:e2e`
+7. `npm run validate:visual-coverage`
+8. `npm run test:visual`
 
 Record artifacts from each run in release notes (command, timestamp, result, and any warnings).
 
@@ -99,6 +103,15 @@ Record artifacts from each run in release notes (command, timestamp, result, and
 - Include screenshots or logs for conflict notice, backup export/import, and retry-context persistence.
 - Include confirmation that auth/permission preflight failures are non-retryable.
 - Include constitution sign-off update in `checklists/requirements.md`.
+- Include baseline/current/diff artifact set for any visual mismatch and record approval metadata in `checklists/visual-review.md`.
+
+## Visual Baseline Update Runbook
+
+1. Run `npm run test:visual` and inspect failures.
+2. For approved UI changes, run `npm run test:visual:update`.
+3. Run `npm run validate:visual-coverage` to verify FR/US -> VS mapping completeness.
+4. Record approval metadata (`reviewId`, `approvalOwner`, `reviewer`, `reviewedAt`, `linkedFRs`, `linkedUserStories`, `changedVSIds`, `rationale`) in `checklists/visual-review.md`.
+5. Attach baseline/current/diff artifacts to review evidence.
 
 ## Constitution Quality Checklist
 

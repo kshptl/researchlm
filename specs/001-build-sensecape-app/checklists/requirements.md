@@ -56,3 +56,11 @@
 - [x] Every FR-001..FR-037 entry is mapped to at least one task in `specs/001-build-sensecape-app/traceability.md`.
 - [x] Non-functional requirement groups (Code Quality, Testing & Verification, UX Consistency, Performance) are mapped to task IDs in `specs/001-build-sensecape-app/traceability.md`.
 - [x] No requirement row is left with an empty task mapping.
+
+## Visual Gate Sign-off
+
+- [x] Visual CI workflow is defined in `.github/workflows/visual-gates.yml`.
+- [x] Visual coverage validation command is defined (`npm run validate:visual-coverage`).
+- [x] Visual regression command is defined (`npm run test:visual`).
+- [x] Baseline update approval metadata fields are defined in `specs/001-build-sensecape-app/checklists/visual-review.md`.
+- [x] Visual coverage matrix exists at `specs/001-build-sensecape-app/visual-coverage-matrix.md`.
