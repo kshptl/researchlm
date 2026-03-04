@@ -95,21 +95,32 @@
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
-### User Experience Consistency Requirements *(mandatory)*
+### Code Quality & Maintainability Requirements
 
-- **UX-001**: System MUST use consistent terminology and interaction patterns across comparable
-  user workflows.
-- **UX-002**: System MUST provide consistent error states, recovery guidance, and empty/loading
-  states for affected user surfaces.
-- **UX-003**: System MUST define accessibility expectations for changed experiences
-  (e.g., keyboard navigation, semantic labels, contrast requirements).
+- Define any required linting, formatting, and static-analysis rules specific to this feature.
+- State module boundaries or refactoring constraints needed to keep complexity manageable.
+- Identify documentation updates required for non-trivial design decisions.
 
-### Performance Requirements *(mandatory)*
+### Testing & Verification Requirements
 
-- **PR-001**: Define measurable performance budget(s) for the primary user workflow
-  (e.g., p95 latency, throughput, memory).
-- **PR-002**: Define the expected load/profile and environment used to verify the budget(s).
-- **PR-003**: Define pass/fail thresholds that block release when exceeded.
+- Specify required test levels for this feature (unit, integration, contract/e2e).
+- For bug fixes, require a regression test that reproduces the failure before the fix.
+- List the exact verification commands or pipelines expected to pass before merge.
+
+### User Experience Consistency Requirements
+
+- Define affected user flows and expected consistency with existing patterns/components.
+- Specify accessibility requirements (keyboard support, labels, contrast, error clarity)
+  relevant to this feature.
+- Define any content/terminology standards that must remain consistent across screens.
+
+### Performance Requirements
+
+- Provide measurable budgets relevant to the feature (e.g., latency, throughput,
+  render time, startup time, memory, CPU).
+- Define how performance will be validated (benchmark, profiling, synthetic checks,
+  production telemetry, or other concrete method).
+- State fallback/mitigation expectations if budgets cannot be met initially.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -129,5 +140,7 @@
 - **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
 - **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
 - **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
-- **SC-005**: [UX consistency metric, e.g., "100% of affected flows pass UX consistency checklist"]
-- **SC-006**: [Performance metric, e.g., "p95 response time stays under 200ms at defined load"]
+- **SC-005**: [Code quality metric, e.g., "No new lint/static-analysis violations in modified files"]
+- **SC-006**: [Testing metric, e.g., "All required test layers pass in CI for this feature"]
+- **SC-007**: [UX metric, e.g., "95% of task attempts complete without UI-related validation errors"]
+- **SC-008**: [Performance metric, e.g., "p95 response time remains under 200 ms under agreed load"]

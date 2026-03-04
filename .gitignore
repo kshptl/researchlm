@@ -1,1 +1,26 @@
-.codex/
+node_modules/
+.next/
+dist/
+build/
+coverage/
+*.log
+.env*
+
+# Editors/OS
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+.tmp/
+
+# Tests
+playwright-report/
+test-results/
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+# Local tool folders
+.opencode/

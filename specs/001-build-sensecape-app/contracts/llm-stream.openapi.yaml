@@ -1,0 +1,189 @@
+openapi: 3.1.0
+info:
+  title: Sensecape LLM Proxy API
+  version: 0.1.0
+  description: Contract for server-side model proxy streaming via SSE.
+servers:
+  - url: /api
+paths:
+  /llm/stream:
+    post:
+      summary: Start a streaming generation request
+      description: >-
+        Proxies generation to configured provider adapter using BYOK credentials and
+        returns normalized SSE events.
+      operationId: streamGeneration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamRequest'
+      responses:
+        '200':
+          description: SSE event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Stream composed of normalized SSE events.
+              examples:
+                sample:
+                  value: |
+                    event: start
+                    data: {"requestId":"req_123","provider":"openai","model":"gpt-4o-mini"}
+
+                    event: delta
+                    data: {"requestId":"req_123","text":"Hello"}
+
+                    event: done
+                    data: {"requestId":"req_123","finishReason":"stop"}
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Missing or invalid BYOK credential
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '429':
+          description: Provider or route rate-limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Upstream or internal failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+components:
+  schemas:
+    StreamRequest:
+      type: object
+      required:
+        - provider
+        - model
+        - intent
+        - messages
+        - auth
+      properties:
+        provider:
+          type: string
+          enum: [openai, anthropic, gemini, openrouter, github-models]
+        model:
+          type: string
+          minLength: 1
+        intent:
+          type: string
+          enum: [prompt, explain, questions, subtopics]
+        messages:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Message'
+        stream:
+          type: boolean
+          default: true
+        parameters:
+          type: object
+          description: Provider-agnostic generation controls.
+          properties:
+            temperature:
+              type: number
+            maxTokens:
+              type: integer
+              minimum: 1
+        auth:
+          $ref: '#/components/schemas/ProviderAuth'
+        workspaceContext:
+          type: object
+          properties:
+            workspaceId:
+              type: string
+            canvasId:
+              type: string
+            sourceNodeId:
+              type: string
+            selectedNodeIds:
+              type: array
+              items:
+                type: string
+        retryContext:
+          type: object
+          properties:
+            triggerType:
+              type: string
+              enum: [initial, manual-retry]
+            retryOfRequestId:
+              type: string
+            attemptNumber:
+              type: integer
+              minimum: 1
+      additionalProperties: false
+
+    Message:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant, tool]
+        content:
+          type: string
+          minLength: 1
+      additionalProperties: false
+
+    ProviderAuth:
+      type: object
+      required: [type, credential]
+      properties:
+        type:
+          type: string
+          enum: [api-key, oauth]
+        credential:
+          type: string
+          minLength: 1
+          description: User-provided provider credential; never a consumer/CLI token.
+      additionalProperties: false
+
+    ErrorEnvelope:
+      type: object
+      required: [category, message, retryable]
+      properties:
+        category:
+          type: string
+          enum:
+            - auth
+            - permission
+            - rate_limit
+            - quota
+            - invalid_request
+            - model_not_found
+            - timeout
+            - upstream
+            - safety
+            - internal
+        message:
+          type: string
+        retryable:
+          type: boolean
+        requestId:
+          type: string
+        provider:
+          type: string
+        providerCode:
+          type: string
+        stage:
+          type: string
+          enum: [preflight, connect, stream, postprocess]
+        upstreamRequestId:
+          type: string
+        retryAfterMs:
+          type: integer

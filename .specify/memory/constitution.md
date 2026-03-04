@@ -1,104 +1,105 @@
 <!--
 Sync Impact Report
-- Version change: N/A -> 1.0.0
+- Version change: 1.0.0 -> 1.1.0
 - Modified principles:
-  - Principle 1 placeholder -> I. Production-Grade Code Quality
-  - Principle 2 placeholder -> II. Mandatory Test Coverage and Reliability
-  - Principle 3 placeholder -> III. Consistent User Experience Contracts
-  - Principle 4 placeholder -> IV. Enforced Performance Budgets
-  - Principle 5 placeholder -> V. Observable and Reviewable Delivery
+  - II. Testing Standards Are Non-Negotiable
+  - III. User Experience Consistency Is Required
 - Added sections:
-  - Engineering Standards
-  - Development Workflow and Quality Gates
-- Removed sections:
-  - None
+  - V. Visual Quality Is a Release Gate
 - Templates requiring updates:
-  - ✅ updated: .specify/templates/plan-template.md
-  - ✅ updated: .specify/templates/spec-template.md
-  - ✅ updated: .specify/templates/tasks-template.md
-  - ⚠ pending (not present in repository): .specify/templates/commands/*.md
+  - ⚠ pending review: .specify/templates/plan-template.md
+  - ⚠ pending review: .specify/templates/spec-template.md
+  - ⚠ pending review: .specify/templates/tasks-template.md
+- Runtime guidance updates:
+  - ✅ no files found: README.md
+  - ✅ no files found: docs/**/*.md
 - Follow-up TODOs:
-  - None
+  - Reconcile templates with visual-gate wording if used by future speckit runs
 -->
-# researchlm Constitution
+
+# ResearchLM Constitution
 
 ## Core Principles
 
-### I. Production-Grade Code Quality
-All merged code MUST pass formatting, linting, and static analysis checks configured for
-the repository. Pull requests MUST avoid dead code and TODO markers without linked issues,
-and MUST keep modules readable through focused functions and explicit naming. Any exception
-requires a documented rationale in the implementation plan.
-Rationale: High signal code review and maintainability depend on consistent code quality
-standards enforced before merge.
+### I. Code Quality Is Enforced
+All production code MUST pass automated linting, formatting, and static analysis checks in
+CI before merge. Changes MUST preserve or improve readability through clear naming,
+cohesive module boundaries, and removal of dead code. Pull requests MUST include a brief
+design rationale for non-trivial decisions and MUST not introduce avoidable duplication.
+Rationale: strict quality gates reduce regression risk and keep the codebase maintainable.
 
-### II. Mandatory Test Coverage and Reliability
-Every change MUST include automated tests at the appropriate level (unit, integration,
-or contract) and MUST include at least one regression test for each bug fix. Tests for new
-behavior MUST fail before implementation and pass after implementation. Flaky tests MUST be
-fixed or removed before merge; quarantined tests are not considered compliance.
-Rationale: Reliable delivery requires deterministic evidence that behavior works and remains
-stable as the system evolves.
+### II. Testing Standards Are Non-Negotiable
+Every change MUST include tests aligned to risk: unit tests for logic, integration tests for
+component boundaries, and end-to-end or contract tests for user-critical flows and API
+contracts. User-facing workflows with material UI states MUST include visual regression
+coverage for approved baseline states. Bug fixes MUST include a regression test that fails
+before the fix and passes after. CI MUST block merges on any failing required test suite,
+including visual regression checks when applicable. Rationale: test rigor is the primary
+control for correctness and long-term delivery speed.
 
-### III. Consistent User Experience Contracts
-User-visible behavior MUST be consistent across equivalent workflows, including terminology,
-error messaging, interaction patterns, and accessibility semantics already used by the
-project. Spec documents MUST define acceptance criteria for UX behavior, and tasks MUST
-include validation steps for these criteria before release.
-Rationale: Predictable UX reduces user errors, support load, and rework.
+### III. User Experience Consistency Is Required
+User-facing changes MUST follow shared UX patterns for layout, interaction states,
+terminology, accessibility, error messaging, and visual hierarchy. New UI behavior MUST
+reuse established design tokens and component patterns unless an approved exception is
+documented. Changed flows MUST be validated against quickstart or acceptance scenarios
+for interaction and visual consistency. Intentional visual baseline changes MUST include
+documented review approval, rationale, and linked requirements. Rationale: consistent UX
+lowers user error rates and support burden.
 
-### IV. Enforced Performance Budgets
-Features MUST define measurable performance requirements in specifications before
-implementation. Changes affecting runtime-critical paths MUST include benchmark or
-profiling evidence that budgets are met for latency, throughput, and/or resource usage.
-Performance regressions beyond documented thresholds MUST block release until corrected or
-explicitly approved with a mitigation plan.
-Rationale: Performance is a product requirement and must be managed with objective data.
+### IV. Performance Budgets Are Defined and Verified
+Features MUST define measurable performance requirements before implementation, including
+latency and resource expectations relevant to the domain. Changes that affect hot paths MUST
+include benchmark or profiling evidence and MUST not regress agreed budgets without explicit
+approval and documented mitigation. CI or release checks MUST verify critical performance
+thresholds where practical. Rationale: explicit budgets prevent hidden degradation.
 
-### V. Observable and Reviewable Delivery
-Plans, specs, and task lists MUST map requirements to test cases and verification steps.
-Pull requests MUST include a compliance checklist referencing each constitution principle.
-Releases MUST include notes describing behavior changes, known risks, and validation status.
-Rationale: Traceability and review discipline ensure consistent quality decisions over time.
+### V. Visual Quality Is a Release Gate
+Features with user-visible UI MUST define deterministic visual regression checks for critical
+states and map them to feature requirements and user stories. Visual diffs MUST be reviewed;
+unapproved diffs MUST block merge. Baseline updates MUST include approval owner,
+rationale, date, and linked FR/US coverage references. Rationale: visual quality is a core
+product requirement and requires objective, repeatable enforcement.
 
 ## Engineering Standards
 
-- Specifications MUST include functional requirements, UX acceptance criteria, and explicit
-  performance targets with measurable thresholds.
-- Plans MUST define quality gates for linting, testing, UX validation, and performance
-  verification before implementation starts.
-- Tasks MUST include work items for automated tests, UX consistency checks, and performance
-  validation for impacted user stories.
-- Work that cannot satisfy a standard at implementation time MUST include a dated follow-up
-  issue and an approved risk note.
+- Definitions of done MUST include code quality checks, required test coverage updates,
+  UX consistency validation, and performance verification artifacts.
+- Definitions of done MUST include visual regression evidence for affected UI states,
+  baseline/diff artifact retention, and documented approval for intentional baseline changes.
+- Requirements in specs MUST use MUST/SHOULD language and include measurable acceptance
+  criteria for UX and performance where applicable.
+- Architecture and implementation plans MUST declare quality gates, test strategy,
+  UX consistency approach, and performance budgets before development begins.
 
-## Development Workflow and Quality Gates
+## Delivery Workflow & Quality Gates
 
-1. Specification phase: define user stories, UX consistency criteria, and measurable
-performance outcomes.
-2. Planning phase: complete constitution check; unresolved violations block plan approval.
-3. Implementation phase: apply test-first workflow for changed behavior and maintain passing
-quality gates locally before review.
-4. Review phase: reviewers MUST verify constitution compliance and reject changes lacking
-objective evidence.
-5. Release phase: publish validation summary (tests, UX checks, performance results) with
-known limitations and mitigation actions.
+1. Plan: identify affected quality, testing, UX, and performance obligations.
+2. Implement: deliver incremental changes with updated tests and documentation.
+3. Verify: run lint, static analysis, test suites, UX checks, visual regression checks, and performance checks.
+4. Review: confirm constitution compliance, visual diff approval status, and traceability before approval and merge.
+5. Release: document any approved exceptions, risks, and follow-up mitigations.
 
 ## Governance
 
-This constitution overrides conflicting project habits and templates. Amendments require:
-(1) a proposed change in a pull request, (2) explicit update of impacted templates and
-guidance docs, and (3) reviewer approval with migration notes when workflow changes.
+This constitution is the authoritative engineering policy for the repository and supersedes
+conflicting local practices.
 
-Versioning policy follows semantic versioning for governance:
+Amendment procedure:
+- Any amendment MUST include a proposed diff, rationale, impact assessment, and template
+  synchronization updates.
+- Amendments require approval by project maintainers and take effect on merge.
+
+Versioning policy (semantic versioning):
 - MAJOR: incompatible principle removals or redefinitions.
-- MINOR: new principle/section or materially expanded guidance.
-- PATCH: clarifications, wording improvements, and non-semantic refinements.
+- MINOR: new principles or materially expanded governance requirements.
+- PATCH: wording clarifications, typo fixes, and non-semantic refinements.
 
 Compliance review expectations:
-- Every pull request MUST include a constitution compliance check.
-- Reviewers MUST confirm evidence for testing, UX consistency, and performance commitments.
-- Violations MUST be resolved before merge or documented as approved exceptions with owners
-  and due dates.
+- Every plan, spec, task list, and pull request MUST include an explicit constitution
+  compliance check.
+- Every plan, spec, task list, and pull request for user-facing changes MUST include an
+  explicit visual quality compliance check.
+- Reviewers MUST block approval when mandatory requirements are unmet or unverified.
+- Exceptions MUST be time-bounded, documented, and include a mitigation owner.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-02 | **Last Amended**: 2026-03-02
+**Version**: 1.1.0 | **Ratified**: 2026-03-02 | **Last Amended**: 2026-03-03
