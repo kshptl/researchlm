@@ -3,15 +3,29 @@ import { z } from "zod"
 import type { GenerationRequest } from "@/features/generation/types"
 import { assertByokPolicy, CredentialPreflightError } from "@/lib/auth/byok-policy"
 import { getProviderAdapter } from "@/lib/providers/registry"
+import { getProviderById } from "@/lib/providers/catalog"
 import { assertMonotonicSequence, encodeSseEvent, encodeSsePing } from "@/lib/sse/events"
 import { toErrorEnvelope } from "@/lib/sse/error-envelope"
 
 const requestSchema = z.object({
-  provider: z.enum(["openai", "anthropic", "gemini", "openrouter", "github-models", "bedrock"]),
+  provider: z.string().min(1),
   model: z.string().min(1),
   intent: z.enum(["prompt", "explain", "questions", "subtopics", "summarize"]),
   messages: z.array(z.object({ role: z.enum(["system", "user", "assistant", "tool"]), content: z.string().min(1) })).min(1),
-  auth: z.object({ type: z.enum(["api-key", "oauth", "aws-profile"]), credential: z.string().min(1) }),
+  auth: z.discriminatedUnion("type", [
+    z.object({ type: z.literal("api-key"), credential: z.string().min(1) }),
+    z.object({
+      type: z.literal("oauth"),
+      access: z.string().min(1),
+      refresh: z.string().optional(),
+      expires: z.number().optional(),
+      accountId: z.string().optional(),
+      enterpriseUrl: z.string().optional()
+    }),
+    z.object({ type: z.literal("wellknown"), key: z.string().min(1), token: z.string().min(1) }),
+    z.object({ type: z.literal("aws-profile"), profile: z.string().min(1), region: z.string().optional() }),
+    z.object({ type: z.literal("aws-env-chain"), region: z.string().optional() })
+  ]),
   workspaceContext: z
     .object({
       workspaceId: z.string().optional(),
@@ -40,7 +54,28 @@ export async function POST(request: Request): Promise<Response> {
       )
     }
 
-    const payload = parsed.data as GenerationRequest
+    const providerInfo = await getProviderById(parsed.data.provider)
+    if (!providerInfo) {
+      return NextResponse.json(
+        {
+          category: "invalid_request",
+          message: `Unknown provider: ${parsed.data.provider}`,
+          retryable: false,
+          requestId
+        },
+        { status: 400 }
+      )
+    }
+
+    const payload: GenerationRequest = {
+      ...(parsed.data as GenerationRequest),
+      providerConfig: {
+        apiBaseUrl: providerInfo.apiBaseUrl,
+        npmPackage: providerInfo.npmPackage,
+        providerName: providerInfo.name,
+        envKeys: providerInfo.envKeys
+      }
+    }
     try {
       assertByokPolicy(payload)
     } catch (error) {
@@ -58,7 +93,7 @@ export async function POST(request: Request): Promise<Response> {
       throw error
     }
 
-    const adapter = getProviderAdapter(payload.provider)
+    const adapter = getProviderAdapter(payload.provider, payload)
 
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {

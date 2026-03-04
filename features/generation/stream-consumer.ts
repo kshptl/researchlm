@@ -13,6 +13,14 @@ type ParsedEvent = {
   data: Record<string, unknown>
 }
 
+function asStreamErrorMessage(data: Record<string, unknown>): string {
+  const message = data.message
+  if (typeof message === "string" && message.trim().length > 0) {
+    return message
+  }
+  return "Provider stream failed"
+}
+
 function parseSsePayload(raw: string): { events: ParsedEvent[]; malformed: boolean } {
   const frames = raw.split("\n\n")
   const events: ParsedEvent[] = []
@@ -71,6 +79,11 @@ export async function consumeGenerationStream(
     }
   }
 
+  const streamError = events.find((event) => event.event === "error")
+  if (streamError) {
+    throw new Error(asStreamErrorMessage(streamError.data))
+  }
+
   const text = events
     .filter((event) => event.event === "delta")
     .map((event) => String(event.data.text ?? ""))
@@ -108,6 +121,9 @@ export async function consumeGenerationStreamIncremental(
       if (malformed) hadMalformed = true
 
       for (const event of events) {
+        if (event.event === "error") {
+          throw new Error(asStreamErrorMessage(event.data))
+        }
         if (event.event === "delta" && event.data.text) {
           const chunk = String(event.data.text)
           fullText += chunk
@@ -122,6 +138,9 @@ export async function consumeGenerationStreamIncremental(
     const { events, malformed } = parseSsePayload(buffer)
     if (malformed) hadMalformed = true
     for (const event of events) {
+      if (event.event === "error") {
+        throw new Error(asStreamErrorMessage(event.data))
+      }
       if (event.event === "delta" && event.data.text) {
         const chunk = String(event.data.text)
         fullText += chunk

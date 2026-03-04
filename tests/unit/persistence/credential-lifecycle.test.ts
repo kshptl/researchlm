@@ -3,6 +3,7 @@ import { assertByokPolicy, CredentialPreflightError } from "@/lib/auth/byok-poli
 import {
   clearCredentialsForTests,
   getActiveCredentialByProvider,
+  getCredentialAuth,
   replaceCredential,
   revokeCredential,
   saveCredential
@@ -16,9 +17,11 @@ describe("credential lifecycle", () => {
   it("supports save, replace, and revoke transitions", () => {
     const saved = saveCredential("openai", "api-key", "sk-valid")
     expect(getActiveCredentialByProvider("openai")?.id).toBe(saved.id)
+    expect(getCredentialAuth(saved)?.type).toBe("api")
 
     const replaced = replaceCredential(saved.id, "sk-replaced")
     expect(replaced?.status).toBe("active")
+    expect(getCredentialAuth(replaced!)?.type).toBe("api")
 
     const revoked = revokeCredential(saved.id)
     expect(revoked?.status).toBe("revoked")

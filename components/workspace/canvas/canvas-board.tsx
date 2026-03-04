@@ -35,6 +35,15 @@ import type { GraphNode } from "@/features/graph-model/types"
 import { getNodeVisualSpec } from "@/features/graph-model/node-visual-contract"
 import { loadSemanticViewState, saveSemanticViewState } from "@/features/persistence/semantic-view-repository"
 import { emitSemanticStateLifecycleLog } from "@/features/persistence/workspace-persistence-service"
+import { getCredentialAuth, type StoredCredential } from "@/lib/auth/credential-store"
+import {
+  getCachedProviderModels,
+  isProviderModelCacheStale,
+  MODEL_CACHE_TTL_MS,
+  pruneProviderModelCache,
+  upsertCachedProviderModels,
+} from "@/lib/providers/model-cache"
+import type { ProviderAuthCredential } from "@/lib/auth/auth-types"
 import {
   DEFAULT_SEMANTIC_BREAKPOINTS,
   resolveSemanticLevel,
@@ -69,9 +78,85 @@ function parseExpandItems(raw: string): string[] {
 
 type CanvasBoardProps = {
   onOpenSettings?: () => void
+  credentials?: StoredCredential[]
 }
 
-function CanvasBoardInner({ onOpenSettings }: CanvasBoardProps) {
+type CatalogProviderOption = {
+  id: string
+  name: string
+  models: Array<{ id: string; name: string }>
+}
+
+type ActiveProviderCredential = {
+  providerId: string
+  providerName: string
+  credentialVersion: string
+  auth: ProviderAuthCredential
+}
+
+function toCredentialVersion(credential: StoredCredential): string {
+  return `${credential.id}:${credential.updatedAt}`
+}
+
+function canonicalProviderId(providerId: string): string {
+  if (providerId === "bedrock") {
+    return "amazon-bedrock"
+  }
+  if (providerId === "gemini") {
+    return "google"
+  }
+  return providerId
+}
+
+function activeCredentialsByProvider(credentials: StoredCredential[]): ActiveProviderCredential[] {
+  const byProvider = new Map<string, StoredCredential>()
+  for (const credential of credentials) {
+    if (credential.status !== "active") {
+      continue
+    }
+    const providerId = canonicalProviderId(credential.provider)
+    const current = byProvider.get(providerId)
+    if (!current || credential.updatedAt > current.updatedAt) {
+      byProvider.set(providerId, credential)
+    }
+  }
+
+  const providers: ActiveProviderCredential[] = []
+  for (const [providerId, credential] of byProvider.entries()) {
+    const auth = getCredentialAuth(credential)
+    if (!auth) {
+      continue
+    }
+    providers.push({
+      providerId,
+      providerName: providerId,
+      credentialVersion: toCredentialVersion(credential),
+      auth,
+    })
+  }
+
+  return providers
+}
+
+const PROVIDER_SORT_ORDER = ["openai", "anthropic", "github-copilot", "openrouter", "google", "github-models", "amazon-bedrock"] as const
+
+function providerSortIndex(providerId: string): number {
+  const index = PROVIDER_SORT_ORDER.indexOf(providerId as (typeof PROVIDER_SORT_ORDER)[number])
+  return index === -1 ? 999 : index
+}
+
+function sortCatalogProviders(providers: CatalogProviderOption[]): CatalogProviderOption[] {
+  return [...providers].sort((left, right) => {
+    const leftIndex = providerSortIndex(left.id)
+    const rightIndex = providerSortIndex(right.id)
+    if (leftIndex !== rightIndex) {
+      return leftIndex - rightIndex
+    }
+    return left.name.localeCompare(right.name)
+  })
+}
+
+function CanvasBoardInner({ onOpenSettings, credentials = [] }: CanvasBoardProps) {
   const workspaceId = "local-workspace"
   const canvasId = "root"
   const { setViewport } = useReactFlow()
@@ -91,12 +176,37 @@ function CanvasBoardInner({ onOpenSettings }: CanvasBoardProps) {
   const [semanticHydrated, setSemanticHydrated] = useState(false)
   const [history, setHistory] = useState<Array<{ id: string; label: string }>>([])
   const [historyCursor, setHistoryCursor] = useState(-1)
+  const [catalogProviders, setCatalogProviders] = useState<CatalogProviderOption[]>([])
+  const [workspaceProvider, setWorkspaceProvider] = useState("openai")
+  const [workspaceModel, setWorkspaceModel] = useState("gpt-5.2")
 
   const generation = useGeneration({
-    provider: "bedrock",
-    model: "us.anthropic.claude-opus-4-6-v1",
-    credential: "cline",
+    provider: workspaceProvider,
+    model: workspaceModel,
   })
+
+  const modelValueToDescriptor = useMemo(() => {
+    const map = new Map<string, { providerId: string; modelId: string }>()
+    for (const provider of catalogProviders) {
+      for (const model of provider.models) {
+        map.set(`${provider.id}::${model.id}`, { providerId: provider.id, modelId: model.id })
+      }
+    }
+    return map
+  }, [catalogProviders])
+
+  const initialModelOptions = useMemo(() => {
+    const options: Array<{ value: string; label: string }> = []
+    for (const provider of catalogProviders) {
+      for (const model of provider.models) {
+        options.push({
+          value: `${provider.id}::${model.id}`,
+          label: `${provider.name} / ${model.name}`,
+        })
+      }
+    }
+    return options
+  }, [catalogProviders])
 
   const displayLevel = resolveSemanticLevel(semanticState, zoom)
   const focusedNode = focusedNodeId ? nodes.find((n) => n.id === focusedNodeId) ?? null : null
@@ -162,7 +272,7 @@ function CanvasBoardInner({ onOpenSettings }: CanvasBoardProps) {
 
     const node = nodes.find((n) => n.id === nodeId)
     const overrides = node?.providerOverride
-      ? { provider: node.providerOverride.provider as "bedrock", model: node.providerOverride.model, credential: "cline" }
+      ? { provider: node.providerOverride.provider, model: node.providerOverride.model }
       : undefined
 
     // Build context from parent conversation chain
@@ -221,6 +331,153 @@ function CanvasBoardInner({ onOpenSettings }: CanvasBoardProps) {
     })()
     return () => { cancelled = true }
   }, [canvasId, workspaceId])
+
+  useEffect(() => {
+    if (typeof fetch !== "function") {
+      return
+    }
+
+    pruneProviderModelCache()
+    const activeProviders = activeCredentialsByProvider(credentials)
+    if (activeProviders.length === 0) {
+      setCatalogProviders([])
+      return
+    }
+
+    let cancelled = false
+    const cachedProviders: CatalogProviderOption[] = []
+    const providersToRefresh: Array<{
+      providerId: string
+      auth: ProviderAuthCredential
+      credentialVersion: string
+    }> = []
+
+    for (const provider of activeProviders) {
+      const cached = getCachedProviderModels(provider.providerId, provider.credentialVersion)
+      if (cached && cached.models.length > 0) {
+        cachedProviders.push({
+          id: provider.providerId,
+          name: cached.providerName,
+          models: cached.models,
+        })
+      }
+
+      if (!cached || isProviderModelCacheStale(cached, MODEL_CACHE_TTL_MS)) {
+        providersToRefresh.push({
+          providerId: provider.providerId,
+          auth: provider.auth,
+          credentialVersion: provider.credentialVersion,
+        })
+      }
+    }
+
+    if (cachedProviders.length > 0) {
+      setCatalogProviders(sortCatalogProviders(cachedProviders))
+    } else {
+      setCatalogProviders([])
+    }
+
+    if (providersToRefresh.length === 0) {
+      return
+    }
+
+    void fetch("/api/providers/models", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        providers: providersToRefresh.map((provider) => ({
+          providerId: provider.providerId,
+          auth: provider.auth,
+        })),
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          return
+        }
+        const payload = (await response.json()) as {
+          providers?: Array<{
+            providerId: string
+            providerName: string
+            source?: "live" | "catalog-fallback"
+            models?: Array<{ id: string; name: string }>
+          }>
+        }
+        if (!payload.providers || cancelled) {
+          return
+        }
+
+        const fetchedProviders = payload.providers
+          .filter((provider) => Array.isArray(provider.models))
+          .map((provider) => ({
+            id: provider.providerId,
+            name: provider.providerName,
+            models: (provider.models ?? []).map((model) => ({ id: model.id, name: model.name })),
+          }))
+
+        const refreshedProviderIds = new Set<string>()
+        for (const provider of payload.providers) {
+          const matchedCredential = providersToRefresh.find((entry) => entry.providerId === provider.providerId)
+          if (!matchedCredential) {
+            continue
+          }
+          refreshedProviderIds.add(provider.providerId)
+          upsertCachedProviderModels({
+            providerId: provider.providerId,
+            providerName: provider.providerName,
+            credentialVersion: matchedCredential.credentialVersion,
+            models: (provider.models ?? []).map((model) => ({ id: model.id, name: model.name })),
+            source: provider.source === "catalog-fallback" ? "catalog-fallback" : "live",
+            updatedAt: Date.now(),
+          })
+        }
+
+        const mergedByProvider = new Map<string, CatalogProviderOption>()
+        for (const provider of cachedProviders) {
+          mergedByProvider.set(provider.id, provider)
+        }
+        for (const provider of fetchedProviders) {
+          if (provider.models.length === 0 && refreshedProviderIds.has(provider.id)) {
+            mergedByProvider.delete(provider.id)
+            continue
+          }
+          if (provider.models.length > 0) {
+            mergedByProvider.set(provider.id, provider)
+          }
+        }
+
+        const allowedProviderIds = new Set(activeProviders.map((provider) => provider.providerId))
+        const nextProviders = Array.from(mergedByProvider.values()).filter((provider) => allowedProviderIds.has(provider.id))
+        setCatalogProviders(sortCatalogProviders(nextProviders))
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [credentials])
+
+  useEffect(() => {
+    if (catalogProviders.length === 0) {
+      return
+    }
+
+    const currentProvider = catalogProviders.find((provider) => provider.id === workspaceProvider)
+    const currentModelExists = currentProvider?.models.some((model) => model.id === workspaceModel) ?? false
+    if (currentProvider && currentModelExists) {
+      return
+    }
+
+    const preferredProvider = catalogProviders.find((provider) => provider.id === "openai") ?? catalogProviders[0]
+    const preferredModel = preferredProvider?.models[0]
+    if (!preferredProvider || !preferredModel) {
+      return
+    }
+
+    setWorkspaceProvider(preferredProvider.id)
+    setWorkspaceModel(preferredModel.id)
+  }, [catalogProviders, workspaceModel, workspaceProvider])
 
   useEffect(() => {
     if (!semanticHydrated) return
@@ -357,7 +614,7 @@ function CanvasBoardInner({ onOpenSettings }: CanvasBoardProps) {
     setNodes((current) => current.map((n) => n.id === nodeId ? { ...n, content: "" } : n))
 
     const overrides = node.providerOverride
-      ? { provider: node.providerOverride.provider as "bedrock", model: node.providerOverride.model, credential: "cline" }
+      ? { provider: node.providerOverride.provider, model: node.providerOverride.model }
       : undefined
 
     const text = await generation.runIntent("prompt", node.prompt, {
@@ -502,7 +759,20 @@ function CanvasBoardInner({ onOpenSettings }: CanvasBoardProps) {
     <div className="relative h-full">
       {/* Central prompt bar when canvas is empty */}
       {nodes.length === 0 ? (
-        <CentralPromptBar onSubmit={handleInitialPrompt} disabled={generation.isStreaming} />
+        <CentralPromptBar
+          onSubmit={handleInitialPrompt}
+          disabled={generation.isStreaming}
+          modelOptions={initialModelOptions}
+          selectedModelValue={`${workspaceProvider}::${workspaceModel}`}
+          onSelectModel={(value) => {
+            const descriptor = modelValueToDescriptor.get(value)
+            if (!descriptor) {
+              return
+            }
+            setWorkspaceProvider(descriptor.providerId)
+            setWorkspaceModel(descriptor.modelId)
+          }}
+        />
       ) : null}
 
       {/* Canvas */}
@@ -719,19 +989,45 @@ function CanvasBoardInner({ onOpenSettings }: CanvasBoardProps) {
             <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Model</label>
             <select
               className="w-full rounded border p-1 text-xs"
-              value={focusedNode.providerOverride?.model ?? "us.anthropic.claude-opus-4-6-v1"}
+              value={
+                focusedNode.providerOverride
+                  ? `${focusedNode.providerOverride.provider}::${focusedNode.providerOverride.model}`
+                  : "__workspace_default__"
+              }
               onChange={(e) => {
-                const model = e.target.value
+                const modelValue = e.target.value
                 setNodes((current) => current.map((n) =>
                   n.id === focusedNode.id
-                    ? { ...n, providerOverride: model === "us.anthropic.claude-opus-4-6-v1" ? undefined : { provider: "bedrock", model }, updatedAt: new Date().toISOString() }
+                    ? {
+                        ...n,
+                        providerOverride:
+                          modelValue === "__workspace_default__"
+                            ? undefined
+                            : (() => {
+                                const descriptor = modelValueToDescriptor.get(modelValue)
+                                if (!descriptor) {
+                                  return undefined
+                                }
+                                return { provider: descriptor.providerId, model: descriptor.modelId }
+                              })(),
+                        updatedAt: new Date().toISOString(),
+                      }
                     : n
                 ))
               }}
             >
-              <option value="us.anthropic.claude-opus-4-6-v1">Claude Opus 4.6</option>
-              <option value="us.anthropic.claude-sonnet-4-6-v1">Claude Sonnet 4.6</option>
-              <option value="us.anthropic.claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+              <option value="__workspace_default__">
+                Workspace default ({workspaceProvider}/{workspaceModel})
+              </option>
+              {catalogProviders.map((provider) => (
+                <optgroup key={provider.id} label={provider.name}>
+                  {provider.models.map((model) => (
+                    <option key={`${provider.id}:${model.id}`} value={`${provider.id}::${model.id}`}>
+                      {model.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </div>
 

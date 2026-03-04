@@ -10,6 +10,8 @@ describe("log redaction policy", () => {
     expect(PROHIBITED_LOG_FIELDS.length).toBeGreaterThan(0)
     expect(isProhibitedLogField("token")).toBe(true)
     expect(isProhibitedLogField("authorization")).toBe(true)
+    expect(isProhibitedLogField("access_token")).toBe(true)
+    expect(isProhibitedLogField("refresh_token")).toBe(true)
     expect(isProhibitedLogField("safeField")).toBe(false)
   })
 
@@ -18,6 +20,7 @@ describe("log redaction policy", () => {
       authorization: "Bearer abc",
       nested: {
         apiKey: "sk-123",
+        access_token: "acc-123",
         safe: "ok"
       },
       list: [{ token: "secret-token" }, { name: "visible" }]
@@ -25,12 +28,13 @@ describe("log redaction policy", () => {
 
     const redacted = redactStructuredData(payload) as {
       authorization: string
-      nested: { apiKey: string; safe: string }
+      nested: { apiKey: string; access_token: string; safe: string }
       list: Array<{ token?: string; name?: string }>
     }
 
     expect(redacted.authorization).toBe("[REDACTED]")
     expect(redacted.nested.apiKey).toBe("[REDACTED]")
+    expect(redacted.nested.access_token).toBe("[REDACTED]")
     expect(redacted.nested.safe).toBe("ok")
     expect(redacted.list[0]?.token).toBe("[REDACTED]")
     expect(redacted.list[1]?.name).toBe("visible")

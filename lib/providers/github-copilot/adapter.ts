@@ -4,25 +4,27 @@ import { extractApiKeyFromAuth } from "@/lib/providers/auth"
 import { parseSseDataLines } from "@/lib/providers/sse-parser"
 import { joinProviderUrl } from "@/lib/providers/url"
 
-async function* streamGitHubModels(request: GenerationRequest): AsyncGenerator<NormalizedStreamEvent, void, void> {
+async function* streamGitHubCopilot(request: GenerationRequest): AsyncGenerator<NormalizedStreamEvent, void, void> {
   const requestId = crypto.randomUUID()
-  yield { type: "start", data: { requestId, provider: "github-models", model: request.model, intent: request.intent } }
+  yield { type: "start", data: { requestId, provider: "github-copilot", model: request.model, intent: request.intent } }
 
-  const token = extractApiKeyFromAuth(request)
+  const token = request.auth.type === "oauth" ? request.auth.refresh || request.auth.access : extractApiKeyFromAuth(request)
   if (!token) {
-    yield { type: "error", data: { message: "Missing GitHub token" } }
+    yield { type: "error", data: { message: "Missing GitHub Copilot credential" } }
     yield { type: "done", data: { finishReason: "error" } }
     return
   }
 
-  const baseUrl = request.providerConfig?.apiBaseUrl ?? "https://models.inference.ai.azure.com"
+  const baseUrl = request.providerConfig?.apiBaseUrl ?? "https://api.githubcopilot.com"
   const endpoint = joinProviderUrl(baseUrl, "chat/completions")
-
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
+      "Openai-Intent": "conversation-edits",
+      "x-initiator": "user",
+      "User-Agent": "researchlm/0.1.0",
     },
     body: JSON.stringify({
       model: request.model,
@@ -35,7 +37,7 @@ async function* streamGitHubModels(request: GenerationRequest): AsyncGenerator<N
   })
 
   if (!response.ok || !response.body) {
-    const message = response.body ? await response.text() : "GitHub Models stream is unavailable"
+    const message = response.body ? await response.text() : "GitHub Copilot stream is unavailable"
     yield { type: "error", data: { message } }
     yield { type: "done", data: { finishReason: "error" } }
     return
@@ -62,8 +64,12 @@ async function* streamGitHubModels(request: GenerationRequest): AsyncGenerator<N
   yield { type: "done", data: { finishReason: "stop" } }
 }
 
-export const githubModelsAdapter: ProviderAdapter = {
-  name: "github-models",
-  capabilities: { supportsTools: true, supportsJsonMode: true, supportsVision: true },
-  stream: streamGitHubModels,
+export const githubCopilotAdapter: ProviderAdapter = {
+  name: "github-copilot",
+  capabilities: {
+    supportsTools: true,
+    supportsJsonMode: true,
+    supportsVision: true,
+  },
+  stream: streamGitHubCopilot,
 }

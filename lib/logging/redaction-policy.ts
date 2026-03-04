@@ -1,10 +1,21 @@
 export const PROHIBITED_LOG_FIELDS = [
   "authorization",
+  "access",
+  "accessToken",
+  "access_token",
   "apiKey",
+  "clientSecret",
+  "client_secret",
   "credential",
   "encryptedValue",
+  "encryptedPayload",
+  "idToken",
+  "id_token",
   "password",
   "rawValue",
+  "refresh",
+  "refreshToken",
+  "refresh_token",
   "secret",
   "token"
 ] as const

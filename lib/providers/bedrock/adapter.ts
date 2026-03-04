@@ -7,9 +7,9 @@ import {
 import { fromIni } from "@aws-sdk/credential-providers"
 import type { GenerationRequest } from "@/features/generation/types"
 import type { NormalizedStreamEvent, ProviderAdapter } from "@/lib/providers/adapter-types"
+import { isBedrockProvider } from "@/lib/providers/auth"
 
 const DEFAULT_REGION = "us-east-1"
-const AWS_PROFILE = "cline"
 
 function toBedrockMessages(request: GenerationRequest): { system: string; messages: Message[] } {
   let system = ""
@@ -42,9 +42,13 @@ async function* streamBedrock(request: GenerationRequest): AsyncGenerator<Normal
     data: { requestId, provider: "bedrock", model: request.model, intent: request.intent },
   }
 
+  if (request.auth.type === "api-key" && request.auth.credential.trim()) {
+    process.env.AWS_BEARER_TOKEN_BEDROCK = request.auth.credential.trim()
+  }
+
   const client = new BedrockRuntimeClient({
-    region: DEFAULT_REGION,
-    credentials: fromIni({ profile: AWS_PROFILE }),
+    region: request.auth.type === "aws-profile" ? request.auth.region ?? process.env.AWS_REGION ?? DEFAULT_REGION : process.env.AWS_REGION ?? DEFAULT_REGION,
+    ...(request.auth.type === "aws-profile" ? { credentials: fromIni({ profile: request.auth.profile }) } : {}),
   })
 
   const { system, messages } = toBedrockMessages(request)
@@ -95,4 +99,8 @@ export const bedrockAdapter: ProviderAdapter = {
     supportsVision: true,
   },
   stream: streamBedrock,
+}
+
+export function isBedrockRequest(request: GenerationRequest): boolean {
+  return isBedrockProvider(request.provider)
 }

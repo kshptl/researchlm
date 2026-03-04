@@ -37,6 +37,7 @@ import {
   replaceCredential,
   revokeCredential,
   saveCredential,
+  saveCredentialAuth,
   type StoredCredential
 } from "@/lib/auth/credential-store"
 import type { Canvas, HierarchyLink } from "@/features/graph-model/types"
@@ -303,7 +304,7 @@ export default function WorkspacePage() {
     <div className="relative h-full">
       {/* Canvas is the full-bleed background layer */}
       <div className="absolute inset-0">
-        <CanvasBoard onOpenSettings={() => setSettingsOpen(true)} />
+        <CanvasBoard onOpenSettings={() => setSettingsOpen(true)} credentials={credentials} />
       </div>
 
       {/* Always-visible settings trigger */}
@@ -406,7 +407,15 @@ export default function WorkspacePage() {
               <section>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Provider Credentials</h3>
                 <ProviderCredentialsForm
-                  onSave={({ provider, type, credential }) => { saveCredential(provider, type, credential); refreshCredentials(); setPersistenceStatus("idle") }}
+                  onSave={({ provider, type, credential, authPayload }) => {
+                    if (authPayload) {
+                      saveCredentialAuth(provider, authPayload)
+                    } else {
+                      saveCredential(provider, type, credential)
+                    }
+                    refreshCredentials()
+                    setPersistenceStatus("idle")
+                  }}
                   onReplace={({ credentialId, credential }) => { replaceCredential(credentialId, credential); refreshCredentials() }}
                   onRevoke={(credentialId) => { revokeCredential(credentialId); refreshCredentials() }}
                   credentials={credentials}

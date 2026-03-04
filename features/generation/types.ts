@@ -7,13 +7,21 @@ export interface GenerationMessage {
 
 export interface GenerationRequest {
   id?: string
-  provider: "openai" | "anthropic" | "gemini" | "openrouter" | "github-models" | "bedrock"
+  provider: string
   model: string
   intent: GenerationIntent
   messages: GenerationMessage[]
-  auth: {
-    type: "api-key" | "oauth" | "aws-profile"
-    credential: string
+  auth:
+    | { type: "api-key"; credential: string }
+    | { type: "oauth"; access: string; refresh?: string; expires?: number; accountId?: string; enterpriseUrl?: string }
+    | { type: "wellknown"; key: string; token: string }
+    | { type: "aws-profile"; profile: string; region?: string }
+    | { type: "aws-env-chain"; region?: string }
+  providerConfig?: {
+    apiBaseUrl?: string
+    npmPackage?: string
+    providerName?: string
+    envKeys?: string[]
   }
   workspaceContext?: {
     workspaceId?: string

@@ -16,26 +16,62 @@ export class CredentialPreflightError extends Error {
 }
 
 export function assertByokPolicy(request: GenerationRequest): void {
-  const credential = request.auth.credential.trim()
-  if (!credential) {
-    throw new CredentialPreflightError("auth", "Missing BYOK credential")
-  }
+  const candidates: string[] = []
 
-  for (const pattern of consumerTokenPatterns) {
-    if (pattern.test(credential)) {
-      throw new CredentialPreflightError("permission", "Consumer or CLI session tokens are not allowed")
+  if (request.auth.type === "api-key") {
+    const credential = request.auth.credential.trim()
+    if (!credential) {
+      throw new CredentialPreflightError("auth", "Missing BYOK credential")
     }
+    candidates.push(credential)
   }
 
-  for (const pattern of revokedCredentialPatterns) {
-    if (pattern.test(credential)) {
-      throw new CredentialPreflightError("permission", "Credential has been revoked or lacks permission")
+  if (request.auth.type === "oauth") {
+    const access = request.auth.access.trim()
+    const refresh = request.auth.refresh?.trim()
+    if (!access && !refresh) {
+      throw new CredentialPreflightError("auth", "Missing OAuth credential")
     }
+    if (access) candidates.push(access)
+    if (refresh) candidates.push(refresh)
   }
 
-  for (const pattern of invalidCredentialPatterns) {
-    if (pattern.test(credential)) {
-      throw new CredentialPreflightError("auth", "Credential is invalid or expired")
+  if (request.auth.type === "wellknown") {
+    if (!request.auth.token.trim()) {
+      throw new CredentialPreflightError("auth", "Missing well-known auth token")
+    }
+    candidates.push(request.auth.token.trim())
+  }
+
+  if (request.auth.type === "aws-profile") {
+    if (!request.auth.profile.trim()) {
+      throw new CredentialPreflightError("auth", "Missing AWS profile")
+    }
+    candidates.push(request.auth.profile.trim())
+  }
+
+  if (request.auth.type === "aws-env-chain") {
+    // No direct secret is required; credentials can come from AWS env/role chain.
+    return
+  }
+
+  for (const value of candidates) {
+    for (const pattern of consumerTokenPatterns) {
+      if (pattern.test(value)) {
+        throw new CredentialPreflightError("permission", "Consumer or CLI session tokens are not allowed")
+      }
+    }
+
+    for (const pattern of revokedCredentialPatterns) {
+      if (pattern.test(value)) {
+        throw new CredentialPreflightError("permission", "Credential has been revoked or lacks permission")
+      }
+    }
+
+    for (const pattern of invalidCredentialPatterns) {
+      if (pattern.test(value)) {
+        throw new CredentialPreflightError("auth", "Credential is invalid or expired")
+      }
     }
   }
 }
