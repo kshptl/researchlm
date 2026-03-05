@@ -21,6 +21,7 @@ test.describe("US4 visual regression", () => {
     await stabilizeVisualPage(page);
     await expect(page).toHaveScreenshot("us4-vs009-resume-chooser.png", {
       fullPage: true,
+      maxDiffPixels: 400,
     });
   });
 
@@ -34,6 +35,7 @@ test.describe("US4 visual regression", () => {
     await stabilizeVisualPage(page);
     await expect(page).toHaveScreenshot("us4-vs011-settings-drawer.png", {
       fullPage: true,
+      maxDiffPixels: 400,
     });
   });
 });

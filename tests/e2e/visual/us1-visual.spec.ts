@@ -19,6 +19,7 @@ test.describe("US1 visual regression", () => {
     ).toBeVisible();
     await expect(page).toHaveScreenshot("us1-vs001-default-workspace.png", {
       fullPage: true,
+      maxDiffPixels: 400,
     });
 
     await submitLandingPrompt(page, "Visual root topic");

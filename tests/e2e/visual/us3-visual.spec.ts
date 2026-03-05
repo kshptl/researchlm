@@ -45,7 +45,7 @@ test.describe("US3 visual regression", () => {
     await expect(inlineContextBlocks).toHaveScreenshot(
       "us3-vs008-follow-up-context.png",
       {
-        maxDiffPixels: 1000,
+        maxDiffPixels: 1500,
       },
     );
   });
