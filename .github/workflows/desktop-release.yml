@@ -13,21 +13,6 @@ jobs:
     timeout-minutes: 75
     permissions:
       contents: write
-    env:
-      WINDOWS_CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
-      WINDOWS_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
-      WINDOWS_CSC_NAME: ${{ secrets.WINDOWS_CSC_NAME }}
-      MACOS_CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
-      MACOS_CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
-      MACOS_CSC_NAME: ${{ secrets.MACOS_CSC_NAME }}
-      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      LINUX_GPG_PRIVATE_KEY: ${{ secrets.LINUX_GPG_PRIVATE_KEY }}
-      LINUX_GPG_PASSPHRASE: ${{ secrets.LINUX_GPG_PASSPHRASE }}
     strategy:
       fail-fast: false
       matrix:
@@ -48,22 +33,74 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build desktop artifacts (Windows signed)
-        if: matrix.os == 'windows-latest' && env.WINDOWS_CSC_LINK != '' && env.WINDOWS_CSC_KEY_PASSWORD != ''
+      - name: Detect release credential availability
+        id: release-capabilities
+        shell: bash
         env:
-          CSC_LINK: ${{ env.WINDOWS_CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ env.WINDOWS_CSC_KEY_PASSWORD }}
-          CSC_NAME: ${{ env.WINDOWS_CSC_NAME }}
-          WIN_CSC_LINK: ${{ env.WINDOWS_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ env.WINDOWS_CSC_KEY_PASSWORD }}
+          WINDOWS_CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          WINDOWS_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+          MACOS_CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
+          MACOS_CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          LINUX_GPG_PRIVATE_KEY: ${{ secrets.LINUX_GPG_PRIVATE_KEY }}
+          LINUX_GPG_PASSPHRASE: ${{ secrets.LINUX_GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+
+          if [[ -n "$WINDOWS_CSC_LINK" && -n "$WINDOWS_CSC_KEY_PASSWORD" ]]; then
+            echo "has_windows_signing=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_windows_signing=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ -n "$MACOS_CSC_LINK" && -n "$MACOS_CSC_KEY_PASSWORD" ]]; then
+            echo "has_macos_signing=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_macos_signing=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ -n "$APPLE_API_KEY_BASE64" && -n "$APPLE_API_KEY_ID" && -n "$APPLE_API_ISSUER" ]]; then
+            echo "has_macos_api_key_notarization=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_macos_api_key_notarization=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ -n "$APPLE_ID" && -n "$APPLE_APP_SPECIFIC_PASSWORD" && -n "$APPLE_TEAM_ID" ]]; then
+            echo "has_macos_apple_id_notarization=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_macos_apple_id_notarization=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [[ -n "$LINUX_GPG_PRIVATE_KEY" && -n "$LINUX_GPG_PASSPHRASE" ]]; then
+            echo "has_linux_gpg_signing=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_linux_gpg_signing=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build desktop artifacts (Windows signed)
+        if: matrix.os == 'windows-latest' && steps.release-capabilities.outputs.has_windows_signing == 'true'
+        env:
+          CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+          CSC_NAME: ${{ secrets.WINDOWS_CSC_NAME }}
+          WIN_CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
         run: npm run dist:desktop
 
       - name: Build desktop artifacts (Windows unsigned)
-        if: matrix.os == 'windows-latest' && (env.WINDOWS_CSC_LINK == '' || env.WINDOWS_CSC_KEY_PASSWORD == '')
+        if: matrix.os == 'windows-latest' && steps.release-capabilities.outputs.has_windows_signing != 'true'
         run: npm run dist:desktop
 
       - name: Prepare Apple API key file
-        if: matrix.os == 'macos-latest' && env.MACOS_CSC_LINK != '' && env.MACOS_CSC_KEY_PASSWORD != '' && env.APPLE_API_KEY_BASE64 != '' && env.APPLE_API_KEY_ID != '' && env.APPLE_API_ISSUER != ''
+        if: matrix.os == 'macos-latest' && steps.release-capabilities.outputs.has_macos_signing == 'true' && steps.release-capabilities.outputs.has_macos_api_key_notarization == 'true'
+        env:
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         run: |
           set -euo pipefail
           KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
@@ -72,20 +109,20 @@ jobs:
           echo "APPLE_API_KEY=$KEY_PATH" >> "$GITHUB_ENV"
 
       - name: Build desktop artifacts (macOS signed)
-        if: matrix.os == 'macos-latest' && env.MACOS_CSC_LINK != '' && env.MACOS_CSC_KEY_PASSWORD != ''
+        if: matrix.os == 'macos-latest' && steps.release-capabilities.outputs.has_macos_signing == 'true'
         env:
-          CSC_LINK: ${{ env.MACOS_CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ env.MACOS_CSC_KEY_PASSWORD }}
-          CSC_NAME: ${{ env.MACOS_CSC_NAME }}
-          APPLE_API_KEY_ID: ${{ env.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER: ${{ env.APPLE_API_ISSUER }}
-          APPLE_ID: ${{ env.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ env.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ env.APPLE_TEAM_ID }}
+          CSC_LINK: ${{ secrets.MACOS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MACOS_CSC_KEY_PASSWORD }}
+          CSC_NAME: ${{ secrets.MACOS_CSC_NAME }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: npm run dist:desktop
 
       - name: Build desktop artifacts (macOS unsigned)
-        if: matrix.os == 'macos-latest' && (env.MACOS_CSC_LINK == '' || env.MACOS_CSC_KEY_PASSWORD == '')
+        if: matrix.os == 'macos-latest' && steps.release-capabilities.outputs.has_macos_signing != 'true'
         run: npm run dist:desktop
 
       - name: Build desktop artifacts (Linux)
@@ -96,7 +133,10 @@ jobs:
         run: npm run checksums:release -- --label "${{ matrix.os }}"
 
       - name: Sign Linux checksums (GPG)
-        if: matrix.os == 'ubuntu-latest' && env.LINUX_GPG_PRIVATE_KEY != '' && env.LINUX_GPG_PASSPHRASE != ''
+        if: matrix.os == 'ubuntu-latest' && steps.release-capabilities.outputs.has_linux_gpg_signing == 'true'
+        env:
+          LINUX_GPG_PRIVATE_KEY: ${{ secrets.LINUX_GPG_PRIVATE_KEY }}
+          LINUX_GPG_PASSPHRASE: ${{ secrets.LINUX_GPG_PASSPHRASE }}
         run: |
           set -euo pipefail
           KEY_FILE="$RUNNER_TEMP/linux-release-signing.key"
