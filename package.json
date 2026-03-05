@@ -22,6 +22,7 @@
     "build:web": "next build",
     "build:desktop:web": "cross-env BUILD_TARGET=electron NEXT_PUBLIC_DISABLE_VERCEL_ANALYTICS=1 next build",
     "prepare:desktop": "node scripts/prepare-electron.mjs",
+    "checksums:release": "node scripts/generate-release-checksums.mjs",
     "build:desktop": "npm run build:desktop:web && npm run prepare:desktop && electron-builder --dir --publish never",
     "dist:desktop": "npm run build:desktop:web && npm run prepare:desktop && electron-builder --publish never",
     "release:desktop": "npm run dist:desktop",
@@ -137,13 +138,27 @@
         "dmg",
         "zip"
       ],
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true
     },
     "win": {
       "target": [
         "nsis",
         "portable"
-      ]
+      ],
+      "signtoolOptions": {
+        "signingHashAlgorithms": [
+          "sha256"
+        ],
+        "timeStampServer": "http://timestamp.digicert.com",
+        "rfc3161TimeStampServer": "http://timestamp.digicert.com"
+      }
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": false,
+      "packElevateHelper": false
     },
     "linux": {
       "target": [

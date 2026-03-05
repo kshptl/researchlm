@@ -1,64 +1,45 @@
 # ResearchLM
 
-ResearchLM is a node-based research workspace for prompt iteration, contextual follow-ups, and provider-flexible LLM exploration.
+ResearchLM is a node-based workspace for exploring ideas with LLMs.
 
-## What You Can Do
+## Features
 
-- Build branching prompt trees and compare ideas quickly.
-- Bring your own API keys and switch providers/models.
-- Persist and resume your workspace locally.
-- Follow up from selected response text as context.
+- Build branching prompt trees and compare outputs.
+- Use your own provider credentials and switch models.
+- Follow up from highlighted response text.
+- Save and resume chats locally.
 
-## Desktop App
+## Download
 
-Download installers from GitHub Releases:
+Desktop builds are published on GitHub Releases:
 
 ```text
 https://github.com/kshptl/researchlm/releases
 ```
 
-## Run Locally (Web)
+Note: desktop builds are currently unsigned, so Windows/macOS may show a security warning before first launch.
+
+## Run Locally
+
+Web:
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`.
-
-## Run Locally (Desktop Dev)
-
-Starts Next.js in dev mode and opens Electron pointed at it.
+Desktop (Electron + Next.js dev server):
 
 ```bash
 npm ci
 npm run dev:desktop
 ```
 
-## Build Desktop Installers (From Source)
+## Privacy
 
-```bash
-npm ci
-npm run dist:desktop
-```
-
-Artifacts land in `release/`.
-
-## Privacy / Telemetry
-
-- Web deployments include Vercel Analytics and Vercel Speed Insights.
-- You can disable telemetry by setting `NEXT_PUBLIC_DISABLE_VERCEL_ANALYTICS=1`.
-
-## Tests
-
-```bash
-npm run lint
-npm run typecheck
-npm run test
-npm run test:e2e
-```
+- Provider keys are BYOK.
+- Workspace/chat state is stored locally.
 
 ## License
 
 MIT. See `LICENSE`.
-
