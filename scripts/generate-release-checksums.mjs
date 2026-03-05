@@ -76,7 +76,7 @@ async function main() {
   const lines = []
   for (const filePath of targetFiles) {
     const digest = await sha256(filePath)
-    const relPath = normalizePath(path.relative(process.cwd(), filePath))
+    const relPath = normalizePath(path.relative(releaseDir, filePath))
     lines.push(`${digest}  ${relPath}`)
   }
 
