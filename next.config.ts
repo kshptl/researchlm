@@ -1,10 +1,10 @@
-import type { NextConfig } from "next"
+import type { NextConfig } from "next";
 
-const isDesktopBuild = process.env.BUILD_TARGET === "electron"
+const isDesktopBuild = process.env.BUILD_TARGET === "electron";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  output: isDesktopBuild ? "standalone" : undefined
-}
+  output: isDesktopBuild ? "standalone" : undefined,
+};
 
-export default nextConfig
+export default nextConfig;

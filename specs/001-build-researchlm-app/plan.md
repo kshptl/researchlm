@@ -28,7 +28,7 @@ Build a desktop-first Researchlm exploration workspace that combines a three-pan
 
 ## Constitution Check (Pre-Phase 0)
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - **Code Quality**: PASS - Plan enforces lint + formatting check + static analysis + maintainability boundaries (canvas interactions, hierarchy, persistence, generation orchestration separated by module responsibility).
 - **Testing Standards**: PASS - Plan requires unit, integration, contract, and e2e coverage for user-critical flows; regression tests required for any fixes.
@@ -179,5 +179,5 @@ Build a desktop-first Researchlm exploration workspace that combines a three-pan
 No constitution violations require exception handling.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| None | N/A | N/A |
+| --------- | ---------- | ------------------------------------ |
+| None      | N/A        | N/A                                  |

@@ -1,4 +1,4 @@
-import nextVitals from "eslint-config-next/core-web-vitals"
+import nextVitals from "eslint-config-next/core-web-vitals";
 
 const config = [
   {
@@ -49,6 +49,6 @@ const config = [
       "no-restricted-imports": "off",
     },
   },
-]
+];
 
-export default config
+export default config;

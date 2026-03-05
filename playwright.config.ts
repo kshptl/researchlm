@@ -1,4 +1,4 @@
-import { defineConfig, devices } from "@playwright/test"
+import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -6,7 +6,7 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:3000",
     viewport: {
       width: 1440,
-      height: 900
+      height: 900,
     },
     deviceScaleFactor: 1,
     locale: "en-US",
@@ -14,7 +14,7 @@ export default defineConfig({
     colorScheme: "light",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
-    video: "retain-on-failure"
+    video: "retain-on-failure",
   },
   projects: [
     {
@@ -23,13 +23,13 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         viewport: {
           width: 1440,
-          height: 900
+          height: 900,
         },
         deviceScaleFactor: 1,
         locale: "en-US",
         timezoneId: "UTC",
-        colorScheme: "light"
-      }
+        colorScheme: "light",
+      },
     },
     {
       name: "firefox-desktop",
@@ -37,19 +37,19 @@ export default defineConfig({
         ...devices["Desktop Firefox"],
         viewport: {
           width: 1440,
-          height: 900
+          height: 900,
         },
         deviceScaleFactor: 1,
         locale: "en-US",
         timezoneId: "UTC",
-        colorScheme: "light"
-      }
-    }
+        colorScheme: "light",
+      },
+    },
   ],
   webServer: {
     command: "npm run dev -- --port 3000",
     url: "http://127.0.0.1:3000",
     reuseExistingServer: true,
-    timeout: 120000
-  }
-})
+    timeout: 120000,
+  },
+});

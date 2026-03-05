@@ -1,114 +1,117 @@
 type ParsedEvent = {
-  event: string
-  data: Record<string, unknown>
-}
+  event: string;
+  data: Record<string, unknown>;
+};
 
 function asStreamErrorMessage(data: Record<string, unknown>): string {
-  const message = data.message
+  const message = data.message;
   if (typeof message === "string" && message.trim().length > 0) {
-    return message
+    return message;
   }
-  return "Provider stream failed"
+  return "Provider stream failed";
 }
 
-function parseSsePayload(raw: string): { events: ParsedEvent[]; malformed: boolean } {
-  const frames = raw.split("\n\n")
-  const events: ParsedEvent[] = []
-  let malformed = false
+function parseSsePayload(raw: string): {
+  events: ParsedEvent[];
+  malformed: boolean;
+} {
+  const frames = raw.split("\n\n");
+  const events: ParsedEvent[] = [];
+  let malformed = false;
 
   for (const frame of frames) {
     if (!frame.trim()) {
-      continue
+      continue;
     }
 
-    const lines = frame.split("\n")
-    const eventLine = lines.find((line) => line.startsWith("event:"))
-    const dataLine = lines.find((line) => line.startsWith("data:"))
+    const lines = frame.split("\n");
+    const eventLine = lines.find((line) => line.startsWith("event:"));
+    const dataLine = lines.find((line) => line.startsWith("data:"));
     if (!eventLine || !dataLine) {
-      malformed = true
-      continue
+      malformed = true;
+      continue;
     }
 
-    const event = eventLine.slice("event:".length).trim()
-    const payload = dataLine.slice("data:".length).trim()
+    const event = eventLine.slice("event:".length).trim();
+    const payload = dataLine.slice("data:".length).trim();
 
     try {
       events.push({
         event,
-        data: JSON.parse(payload) as Record<string, unknown>
-      })
+        data: JSON.parse(payload) as Record<string, unknown>,
+      });
     } catch {
-      malformed = true
+      malformed = true;
     }
   }
 
-  return { events, malformed }
+  return { events, malformed };
 }
 
 export async function consumeGenerationStream(
   stream: ReadableStream<Uint8Array>,
-  _sourceText: string
+  _sourceText: string,
 ): Promise<{ text: string }> {
-  const reader = stream.getReader()
-  const decoder = new TextDecoder()
-  let raw = ""
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let raw = "";
 
   while (true) {
-    const { done, value } = await reader.read()
+    const { done, value } = await reader.read();
     if (done) {
-      break
+      break;
     }
-    raw += decoder.decode(value, { stream: true })
+    raw += decoder.decode(value, { stream: true });
   }
 
-  const { events } = parseSsePayload(raw)
+  const { events } = parseSsePayload(raw);
 
-  const streamError = events.find((event) => event.event === "error")
+  const streamError = events.find((event) => event.event === "error");
   if (streamError) {
-    throw new Error(asStreamErrorMessage(streamError.data))
+    throw new Error(asStreamErrorMessage(streamError.data));
   }
 
   const text = events
     .filter((event) => event.event === "delta")
     .map((event) => String(event.data.text ?? ""))
-    .join("")
+    .join("");
 
   return {
     text,
-  }
+  };
 }
 
 export async function consumeGenerationStreamIncremental(
   stream: ReadableStream<Uint8Array>,
   _sourceText: string,
-  onDelta: (chunk: string) => void
+  onDelta: (chunk: string) => void,
 ): Promise<{ text: string }> {
-  const reader = stream.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ""
-  let fullText = ""
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let fullText = "";
 
   while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buffer += decoder.decode(value, { stream: true })
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
 
     // Process complete SSE frames (separated by double newline)
-    const frames = buffer.split("\n\n")
-    buffer = frames.pop() ?? ""
+    const frames = buffer.split("\n\n");
+    buffer = frames.pop() ?? "";
 
     for (const frame of frames) {
-      if (!frame.trim()) continue
-      const { events } = parseSsePayload(frame)
+      if (!frame.trim()) continue;
+      const { events } = parseSsePayload(frame);
 
       for (const event of events) {
         if (event.event === "error") {
-          throw new Error(asStreamErrorMessage(event.data))
+          throw new Error(asStreamErrorMessage(event.data));
         }
         if (event.event === "delta" && event.data.text) {
-          const chunk = String(event.data.text)
-          fullText += chunk
-          onDelta(chunk)
+          const chunk = String(event.data.text);
+          fullText += chunk;
+          onDelta(chunk);
         }
       }
     }
@@ -116,20 +119,20 @@ export async function consumeGenerationStreamIncremental(
 
   // Process any remaining buffer
   if (buffer.trim()) {
-    const { events } = parseSsePayload(buffer)
+    const { events } = parseSsePayload(buffer);
     for (const event of events) {
       if (event.event === "error") {
-        throw new Error(asStreamErrorMessage(event.data))
+        throw new Error(asStreamErrorMessage(event.data));
       }
       if (event.event === "delta" && event.data.text) {
-        const chunk = String(event.data.text)
-        fullText += chunk
-        onDelta(chunk)
+        const chunk = String(event.data.text);
+        fullText += chunk;
+        onDelta(chunk);
       }
     }
   }
 
   return {
     text: fullText,
-  }
+  };
 }

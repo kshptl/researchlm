@@ -1,4 +1,4 @@
-import type { SemanticLevel } from "@/features/graph-model/types"
+import type { SemanticLevel } from "@/features/graph-model/types";
 
 const STOP_WORDS = new Set([
   "a",
@@ -20,14 +20,11 @@ const STOP_WORDS = new Set([
   "that",
   "the",
   "to",
-  "with"
-])
+  "with",
+]);
 
 function normalizedWords(content: string): string[] {
-  return content
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
+  return content.trim().split(/\s+/).filter(Boolean);
 }
 
 function sentenceLikeLines(content: string): string[] {
@@ -36,25 +33,25 @@ function sentenceLikeLines(content: string): string[] {
     .split(/\n+/)
     .flatMap((line) => line.split(/[.!?]+/))
     .map((line) => line.trim())
-    .filter(Boolean)
+    .filter(Boolean);
 }
 
 function lineProjection(content: string): string {
-  const lines = sentenceLikeLines(content)
+  const lines = sentenceLikeLines(content);
   if (lines.length === 0) {
-    return ""
+    return "";
   }
 
   return lines
     .slice(0, 3)
     .map((line) => normalizedWords(line).slice(0, 8).join(" "))
-    .join("\n")
+    .join("\n");
 }
 
 function summaryProjection(content: string): string {
-  const words = normalizedWords(content)
-  const clipped = words.slice(0, 22).join(" ")
-  return words.length > 22 ? `${clipped}...` : clipped
+  const words = normalizedWords(content);
+  const clipped = words.slice(0, 22).join(" ");
+  return words.length > 22 ? `${clipped}...` : clipped;
 }
 
 function keywordProjection(content: string): string {
@@ -62,41 +59,46 @@ function keywordProjection(content: string): string {
     .trim()
     .split(/\W+/)
     .map((word) => word.toLowerCase())
-    .filter((word) => word.length > 2 && !STOP_WORDS.has(word))
+    .filter((word) => word.length > 2 && !STOP_WORDS.has(word));
 
-  const unique = new Set<string>()
+  const unique = new Set<string>();
   for (const word of words) {
     if (unique.size >= 6) {
-      break
+      break;
     }
-    unique.add(word)
+    unique.add(word);
   }
 
-  return [...unique].join(", ")
+  return [...unique].join(", ");
 }
 
-export function representationForLevel(content: string, level: SemanticLevel): string {
-  const normalized = content.trim()
+export function representationForLevel(
+  content: string,
+  level: SemanticLevel,
+): string {
+  const normalized = content.trim();
   if (level === "all") {
-    return normalized
+    return normalized;
   }
 
   if (level === "lines") {
-    return lineProjection(normalized)
+    return lineProjection(normalized);
   }
 
   if (level === "summary") {
-    return summaryProjection(normalized)
+    return summaryProjection(normalized);
   }
 
-  return keywordProjection(normalized)
+  return keywordProjection(normalized);
 }
 
-export function deriveSemanticRepresentations(content: string): Record<SemanticLevel, string> {
+export function deriveSemanticRepresentations(
+  content: string,
+): Record<SemanticLevel, string> {
   return {
     all: representationForLevel(content, "all"),
     lines: representationForLevel(content, "lines"),
     summary: representationForLevel(content, "summary"),
-    keywords: representationForLevel(content, "keywords")
-  }
+    keywords: representationForLevel(content, "keywords"),
+  };
 }

@@ -1,19 +1,23 @@
-import { describe, expect, it } from "vitest"
-import { hydrateWorkspaceRecord } from "@/features/persistence/workspace-persistence-service"
-import { createBackupManifest, exportWorkspaceBackup, importWorkspaceBackup } from "@/features/persistence/workspace-backup"
+import { describe, expect, it } from "vitest";
+import { hydrateWorkspaceRecord } from "@/features/persistence/workspace-persistence-service";
+import {
+  createBackupManifest,
+  exportWorkspaceBackup,
+  importWorkspaceBackup,
+} from "@/features/persistence/workspace-backup";
 
 describe("workspace hydration", () => {
   it("hydrates legacy workspace records with missing fields", () => {
     const hydrated = hydrateWorkspaceRecord({
       id: "w-legacy",
       title: "Legacy",
-      activeCanvasId: "canvas-a"
-    })
+      activeCanvasId: "canvas-a",
+    });
 
-    expect(hydrated.rootCanvasId).toBe("canvas-a")
-    expect(hydrated.activeCanvasId).toBe("canvas-a")
-    expect(hydrated.version).toBe(1)
-  })
+    expect(hydrated.rootCanvasId).toBe("canvas-a");
+    expect(hydrated.activeCanvasId).toBe("canvas-a");
+    expect(hydrated.version).toBe(1);
+  });
 
   it("serializes and restores backup payload", () => {
     const backup = {
@@ -26,18 +30,18 @@ describe("workspace hydration", () => {
         activeCanvasId: "c1",
         version: 1,
         createdAt: "",
-        updatedAt: ""
+        updatedAt: "",
       },
       canvases: [],
       nodes: [],
       connections: [],
-      hierarchyLinks: []
-    }
+      hierarchyLinks: [],
+    };
 
-    const withManifest = { ...backup, manifest: createBackupManifest(backup) }
+    const withManifest = { ...backup, manifest: createBackupManifest(backup) };
 
-    const hydrated = importWorkspaceBackup(exportWorkspaceBackup(withManifest))
-    expect(hydrated.workspace.id).toBe("w1")
-    expect(hydrated.manifest?.workspaceId).toBe("w1")
-  })
-})
+    const hydrated = importWorkspaceBackup(exportWorkspaceBackup(withManifest));
+    expect(hydrated.workspace.id).toBe("w1");
+    expect(hydrated.manifest?.workspaceId).toBe("w1");
+  });
+});

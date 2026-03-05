@@ -31,13 +31,13 @@
 - Q: What contrast standard should node visuals meet? → A: Node labels/text and key node-state indicators must meet WCAG 2.1 AA contrast requirements.
 - Q: How should visual quality and UI appeal be validated for release readiness? → A: Require merge-blocking visual regression tests plus rubric-based design review sign-off mapped to all FR and User Story visual states.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
   Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
   you should still have a viable MVP (Minimum Viable Product) that delivers value.
-  
+
   Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
   Think of each story as a standalone slice of functionality that can be:
   - Developed independently
@@ -137,7 +137,7 @@ As a returning user, I can reopen a workspace and continue from my prior canvase
 - Near-simultaneous cross-tab edits affect related entities (for example node and edge) and require deterministic reconciliation without orphaning references.
 - A user opens the workspace on unsupported viewport sizes where desktop editing is out of scope.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -253,7 +253,7 @@ Each `VS-###` state MUST have at least one approved baseline per required browse
 - Performance evidence MUST be retained as versioned artifacts for review, including run metadata and threshold pass/fail outcomes.
 - Performance evidence runs MUST record browser/version, viewport, hardware profile class, network profile summary, dataset profile, and provider quota/rate-limit status for each measured run.
 
-### Key Entities *(include if feature involves data)*
+### Key Entities _(include if feature involves data)_
 
 - **Workspace**: A user's persisted research space containing canvases, hierarchy links, interaction state, and view preferences.
 - **Canvas**: A topic-focused working surface containing nodes and links; participates in parent-child hierarchy relationships.
@@ -267,7 +267,7 @@ Each `VS-###` state MUST have at least one approved baseline per required browse
 - **Log Redaction Policy**: A structured policy defining prohibited sensitive fields, taxonomy class, and redaction/omit rules for local structured logs.
 - **Semantic View State**: The currently selected detail mode (auto or manual level) controlling how node content is displayed.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

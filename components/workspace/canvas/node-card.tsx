@@ -1,33 +1,42 @@
-"use client"
+"use client";
 
-import React from "react"
-import { useEffect, useState } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
-import type { NodeType, SemanticLevel } from "@/features/graph-model/types"
-import { getNodeVisualSpec } from "@/features/graph-model/node-visual-contract"
-import { representationForLevel } from "@/features/semantic-levels/representation"
+import React from "react";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import type { NodeType, SemanticLevel } from "@/features/graph-model/types";
+import { getNodeVisualSpec } from "@/features/graph-model/node-visual-contract";
+import { representationForLevel } from "@/features/semantic-levels/representation";
 
 type Props = {
-  id: string
-  type: NodeType
-  content: string
-   semanticLevel?: SemanticLevel
-   semanticMode?: "auto" | "manual"
-  selected?: boolean
-  onSelect?: (id: string) => void
-  onChange: (id: string, content: string) => void
-}
+  id: string;
+  type: NodeType;
+  content: string;
+  semanticLevel?: SemanticLevel;
+  semanticMode?: "auto" | "manual";
+  selected?: boolean;
+  onSelect?: (id: string) => void;
+  onChange: (id: string, content: string) => void;
+};
 
-export function NodeCard({ id, type, content, semanticLevel = "all", semanticMode = "auto", selected, onSelect, onChange }: Props) {
-  const [value, setValue] = useState(content)
-  const visual = getNodeVisualSpec(type)
-  const projected = representationForLevel(content, semanticLevel)
-  const isEditable = semanticLevel === "all"
+export function NodeCard({
+  id,
+  type,
+  content,
+  semanticLevel = "all",
+  semanticMode = "auto",
+  selected,
+  onSelect,
+  onChange,
+}: Props) {
+  const [value, setValue] = useState(content);
+  const visual = getNodeVisualSpec(type);
+  const projected = representationForLevel(content, semanticLevel);
+  const isEditable = semanticLevel === "all";
 
   useEffect(() => {
-    setValue(content)
-  }, [content, id])
+    setValue(content);
+  }, [content, id]);
 
   return (
     <article
@@ -37,7 +46,10 @@ export function NodeCard({ id, type, content, semanticLevel = "all", semanticMod
       <header className="mb-2 flex items-center gap-2 text-xs font-semibold">
         <span aria-hidden="true">{visual.icon}</span>
         <span>{visual.typeLabel}</span>
-        <Badge variant="secondary" className="ml-auto text-[10px] uppercase text-slate-600">
+        <Badge
+          variant="secondary"
+          className="ml-auto text-[10px] uppercase text-slate-600"
+        >
           {semanticMode}:{semanticLevel}
         </Badge>
       </header>
@@ -48,14 +60,18 @@ export function NodeCard({ id, type, content, semanticLevel = "all", semanticMod
         aria-label="Node content"
         onChange={(event) => {
           if (!isEditable) {
-            return
+            return;
           }
-          const next = event.target.value
-          setValue(next)
-          onChange(id, next)
+          const next = event.target.value;
+          setValue(next);
+          onChange(id, next);
         }}
       />
-      {!isEditable ? <p className="mt-2 text-[10px] text-slate-500">Switch to full detail to edit this node.</p> : null}
+      {!isEditable ? (
+        <p className="mt-2 text-[10px] text-slate-500">
+          Switch to full detail to edit this node.
+        </p>
+      ) : null}
     </article>
-  )
+  );
 }

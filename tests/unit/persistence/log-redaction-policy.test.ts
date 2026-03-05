@@ -1,19 +1,19 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "vitest";
 import {
   isProhibitedLogField,
   PROHIBITED_LOG_FIELDS,
-  redactStructuredData
-} from "@/lib/logging/redaction-policy"
+  redactStructuredData,
+} from "@/lib/logging/redaction-policy";
 
 describe("log redaction policy", () => {
   it("classifies prohibited sensitive fields", () => {
-    expect(PROHIBITED_LOG_FIELDS.length).toBeGreaterThan(0)
-    expect(isProhibitedLogField("token")).toBe(true)
-    expect(isProhibitedLogField("authorization")).toBe(true)
-    expect(isProhibitedLogField("access_token")).toBe(true)
-    expect(isProhibitedLogField("refresh_token")).toBe(true)
-    expect(isProhibitedLogField("safeField")).toBe(false)
-  })
+    expect(PROHIBITED_LOG_FIELDS.length).toBeGreaterThan(0);
+    expect(isProhibitedLogField("token")).toBe(true);
+    expect(isProhibitedLogField("authorization")).toBe(true);
+    expect(isProhibitedLogField("access_token")).toBe(true);
+    expect(isProhibitedLogField("refresh_token")).toBe(true);
+    expect(isProhibitedLogField("safeField")).toBe(false);
+  });
 
   it("redacts prohibited fields recursively", () => {
     const payload = {
@@ -21,22 +21,22 @@ describe("log redaction policy", () => {
       nested: {
         apiKey: "sk-123",
         access_token: "acc-123",
-        safe: "ok"
+        safe: "ok",
       },
-      list: [{ token: "secret-token" }, { name: "visible" }]
-    }
+      list: [{ token: "secret-token" }, { name: "visible" }],
+    };
 
     const redacted = redactStructuredData(payload) as {
-      authorization: string
-      nested: { apiKey: string; access_token: string; safe: string }
-      list: Array<{ token?: string; name?: string }>
-    }
+      authorization: string;
+      nested: { apiKey: string; access_token: string; safe: string };
+      list: Array<{ token?: string; name?: string }>;
+    };
 
-    expect(redacted.authorization).toBe("[REDACTED]")
-    expect(redacted.nested.apiKey).toBe("[REDACTED]")
-    expect(redacted.nested.access_token).toBe("[REDACTED]")
-    expect(redacted.nested.safe).toBe("ok")
-    expect(redacted.list[0]?.token).toBe("[REDACTED]")
-    expect(redacted.list[1]?.name).toBe("visible")
-  })
-})
+    expect(redacted.authorization).toBe("[REDACTED]");
+    expect(redacted.nested.apiKey).toBe("[REDACTED]");
+    expect(redacted.nested.access_token).toBe("[REDACTED]");
+    expect(redacted.nested.safe).toBe("ok");
+    expect(redacted.list[0]?.token).toBe("[REDACTED]");
+    expect(redacted.list[1]?.name).toBe("visible");
+  });
+});

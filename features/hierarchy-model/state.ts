@@ -1,25 +1,29 @@
-import type { Canvas, HierarchyLink } from "@/features/graph-model/types"
+import type { Canvas, HierarchyLink } from "@/features/graph-model/types";
 
 export interface HierarchyState {
-  canvases: Canvas[]
-  links: HierarchyLink[]
+  canvases: Canvas[];
+  links: HierarchyLink[];
 }
 
-export type SubtopicCandidateLifecycle = "presented" | "selected" | "dismissed" | "pending"
+export type SubtopicCandidateLifecycle =
+  | "presented"
+  | "selected"
+  | "dismissed"
+  | "pending";
 
 export interface GeneratedSubtopicCandidate {
-  id: string
-  workspaceId: string
-  parentCanvasId: string
-  label: string
-  lifecycle: SubtopicCandidateLifecycle
-  sourceNodeId?: string
-  createdAt: string
-  updatedAt: string
+  id: string;
+  workspaceId: string;
+  parentCanvasId: string;
+  label: string;
+  lifecycle: SubtopicCandidateLifecycle;
+  sourceNodeId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export function createChildCanvas(parent: Canvas, topic: string): Canvas {
-  const now = new Date().toISOString()
+  const now = new Date().toISOString();
   return {
     id: crypto.randomUUID(),
     workspaceId: parent.workspaceId,
@@ -27,134 +31,169 @@ export function createChildCanvas(parent: Canvas, topic: string): Canvas {
     parentCanvasId: parent.id,
     depth: parent.depth + 1,
     createdAt: now,
-    updatedAt: now
-  }
+    updatedAt: now,
+  };
 }
 
-export function createHierarchyLink(parentCanvasId: string, childCanvasId: string, workspaceId: string): HierarchyLink {
+export function createHierarchyLink(
+  parentCanvasId: string,
+  childCanvasId: string,
+  workspaceId: string,
+): HierarchyLink {
   return {
     id: crypto.randomUUID(),
     workspaceId,
     parentCanvasId,
     childCanvasId,
     linkType: "subtopic",
-    createdAt: new Date().toISOString()
-  }
+    createdAt: new Date().toISOString(),
+  };
 }
 
-export function wouldCreateCycle(links: HierarchyLink[], parentCanvasId: string, childCanvasId: string): boolean {
+export function wouldCreateCycle(
+  links: HierarchyLink[],
+  parentCanvasId: string,
+  childCanvasId: string,
+): boolean {
   if (parentCanvasId === childCanvasId) {
-    return true
+    return true;
   }
 
-  const adjacency = new Map<string, string[]>()
+  const adjacency = new Map<string, string[]>();
   for (const link of links) {
-    const list = adjacency.get(link.parentCanvasId) ?? []
-    list.push(link.childCanvasId)
-    adjacency.set(link.parentCanvasId, list)
+    const list = adjacency.get(link.parentCanvasId) ?? [];
+    list.push(link.childCanvasId);
+    adjacency.set(link.parentCanvasId, list);
   }
 
-  adjacency.set(parentCanvasId, [...(adjacency.get(parentCanvasId) ?? []), childCanvasId])
+  adjacency.set(parentCanvasId, [
+    ...(adjacency.get(parentCanvasId) ?? []),
+    childCanvasId,
+  ]);
 
-  const seen = new Set<string>()
-  const stack: string[] = [childCanvasId]
+  const seen = new Set<string>();
+  const stack: string[] = [childCanvasId];
 
   while (stack.length) {
-    const current = stack.pop()!
+    const current = stack.pop()!;
     if (current === parentCanvasId) {
-      return true
+      return true;
     }
     if (seen.has(current)) {
-      continue
+      continue;
     }
-    seen.add(current)
+    seen.add(current);
     for (const next of adjacency.get(current) ?? []) {
-      stack.push(next)
+      stack.push(next);
     }
   }
 
-  return false
+  return false;
 }
 
-export function linkExists(links: HierarchyLink[], parentCanvasId: string, childCanvasId: string): boolean {
-  return links.some((link) => link.parentCanvasId === parentCanvasId && link.childCanvasId === childCanvasId)
+export function linkExists(
+  links: HierarchyLink[],
+  parentCanvasId: string,
+  childCanvasId: string,
+): boolean {
+  return links.some(
+    (link) =>
+      link.parentCanvasId === parentCanvasId &&
+      link.childCanvasId === childCanvasId,
+  );
 }
 
-export function upsertHierarchyLink(links: HierarchyLink[], link: HierarchyLink): HierarchyLink[] {
+export function upsertHierarchyLink(
+  links: HierarchyLink[],
+  link: HierarchyLink,
+): HierarchyLink[] {
   if (linkExists(links, link.parentCanvasId, link.childCanvasId)) {
-    return links
+    return links;
   }
   if (wouldCreateCycle(links, link.parentCanvasId, link.childCanvasId)) {
-    return links
+    return links;
   }
-  return [...links, link]
+  return [...links, link];
 }
 
-export function childCanvasIds(links: HierarchyLink[], parentCanvasId: string): string[] {
-  return links.filter((link) => link.parentCanvasId === parentCanvasId).map((link) => link.childCanvasId)
+export function childCanvasIds(
+  links: HierarchyLink[],
+  parentCanvasId: string,
+): string[] {
+  return links
+    .filter((link) => link.parentCanvasId === parentCanvasId)
+    .map((link) => link.childCanvasId);
 }
 
-export function buildCanvasTree(canvases: Canvas[], links: HierarchyLink[], rootCanvasId: string): Canvas[] {
-  const map = new Map(canvases.map((canvas) => [canvas.id, canvas]))
-  const ordered: Canvas[] = []
-  const queue: string[] = [rootCanvasId]
-  const seen = new Set<string>()
+export function buildCanvasTree(
+  canvases: Canvas[],
+  links: HierarchyLink[],
+  rootCanvasId: string,
+): Canvas[] {
+  const map = new Map(canvases.map((canvas) => [canvas.id, canvas]));
+  const ordered: Canvas[] = [];
+  const queue: string[] = [rootCanvasId];
+  const seen = new Set<string>();
 
   while (queue.length) {
-    const id = queue.shift()!
+    const id = queue.shift()!;
     if (seen.has(id)) {
-      continue
+      continue;
     }
-    seen.add(id)
-    const canvas = map.get(id)
+    seen.add(id);
+    const canvas = map.get(id);
     if (canvas) {
-      ordered.push(canvas)
-      const children = childCanvasIds(links, id)
+      ordered.push(canvas);
+      const children = childCanvasIds(links, id);
       for (const childId of children) {
-        queue.push(childId)
+        queue.push(childId);
       }
     }
   }
 
   for (const canvas of canvases) {
     if (!seen.has(canvas.id)) {
-      ordered.push(canvas)
+      ordered.push(canvas);
     }
   }
 
-  return ordered
+  return ordered;
 }
 
 export function upsertSubtopicCandidate(
   candidates: GeneratedSubtopicCandidate[],
-  candidate: GeneratedSubtopicCandidate
+  candidate: GeneratedSubtopicCandidate,
 ): GeneratedSubtopicCandidate[] {
-  const found = candidates.find((item) => item.id === candidate.id)
+  const found = candidates.find((item) => item.id === candidate.id);
   if (!found) {
-    return [...candidates, candidate]
+    return [...candidates, candidate];
   }
-  return candidates.map((item) => (item.id === candidate.id ? { ...found, ...candidate } : item))
+  return candidates.map((item) =>
+    item.id === candidate.id ? { ...found, ...candidate } : item,
+  );
 }
 
 export function setSubtopicCandidateLifecycle(
   candidates: GeneratedSubtopicCandidate[],
   candidateId: string,
-  lifecycle: SubtopicCandidateLifecycle
+  lifecycle: SubtopicCandidateLifecycle,
 ): GeneratedSubtopicCandidate[] {
   return candidates.map((candidate) =>
     candidate.id === candidateId
       ? {
           ...candidate,
           lifecycle,
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
         }
-      : candidate
-  )
+      : candidate,
+  );
 }
 
 export function candidatesForCanvas(
   candidates: GeneratedSubtopicCandidate[],
-  parentCanvasId: string
+  parentCanvasId: string,
 ): GeneratedSubtopicCandidate[] {
-  return candidates.filter((candidate) => candidate.parentCanvasId === parentCanvasId)
+  return candidates.filter(
+    (candidate) => candidate.parentCanvasId === parentCanvasId,
+  );
 }

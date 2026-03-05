@@ -1,51 +1,64 @@
-import type { Canvas, Connection, GraphNode, HierarchyLink, Workspace } from "@/features/graph-model/types"
-import type { GenerationAttempt, LocalGenerationLog } from "@/features/generation/types"
-import type { GeneratedSubtopicCandidate } from "@/features/hierarchy-model/state"
-import type { ConflictEventRecord, RetryContextRecord, WorkspaceSnapshotRecord } from "@/features/persistence/repository"
+import type {
+  Canvas,
+  Connection,
+  GraphNode,
+  HierarchyLink,
+  Workspace,
+} from "@/features/graph-model/types";
+import type {
+  GenerationAttempt,
+  LocalGenerationLog,
+} from "@/features/generation/types";
+import type { GeneratedSubtopicCandidate } from "@/features/hierarchy-model/state";
+import type {
+  ConflictEventRecord,
+  RetryContextRecord,
+  WorkspaceSnapshotRecord,
+} from "@/features/persistence/repository";
 
 type GenerationRequestRecord = {
-  id: string
-  provider: string
-  model: string
-  intent: string
-  status: string
-  createdAt: string
-  updatedAt: string
-}
+  id: string;
+  provider: string;
+  model: string;
+  intent: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
-export const DB_NAME = "researchlm"
-export const DB_VERSION = 3
+export const DB_NAME = "researchlm";
+export const DB_VERSION = 3;
 
 export type ChatSessionRecord = {
-  id: string
-  title: string
-  workspaceId: string
-  createdAt: string
-  updatedAt: string
-  lastOpenedAt: string
-  lastSnapshotAt?: string
-  nodeCount: number
-  edgeCount: number
-  provider?: string
-  model?: string
-}
+  id: string;
+  title: string;
+  workspaceId: string;
+  createdAt: string;
+  updatedAt: string;
+  lastOpenedAt: string;
+  lastSnapshotAt?: string;
+  nodeCount: number;
+  edgeCount: number;
+  provider?: string;
+  model?: string;
+};
 
 type Stores = {
-  chatSessions: ChatSessionRecord
-  workspaces: Workspace
-  canvases: Canvas
-  nodes: GraphNode
-  connections: Connection
-  hierarchyLinks: HierarchyLink
-  generatedSubtopicCandidates: GeneratedSubtopicCandidate
-  snapshots: WorkspaceSnapshotRecord
-  retryContexts: RetryContextRecord
-  conflictEvents: ConflictEventRecord
-  generationRequests: GenerationRequestRecord
-  generationAttempts: GenerationAttempt
-  localLogs: LocalGenerationLog
-  settings: { id: string; value: unknown }
-}
+  chatSessions: ChatSessionRecord;
+  workspaces: Workspace;
+  canvases: Canvas;
+  nodes: GraphNode;
+  connections: Connection;
+  hierarchyLinks: HierarchyLink;
+  generatedSubtopicCandidates: GeneratedSubtopicCandidate;
+  snapshots: WorkspaceSnapshotRecord;
+  retryContexts: RetryContextRecord;
+  conflictEvents: ConflictEventRecord;
+  generationRequests: GenerationRequestRecord;
+  generationAttempts: GenerationAttempt;
+  localLogs: LocalGenerationLog;
+  settings: { id: string; value: unknown };
+};
 
 const STORE_NAMES: Array<keyof Stores> = [
   "chatSessions",
@@ -61,23 +74,23 @@ const STORE_NAMES: Array<keyof Stores> = [
   "generationRequests",
   "generationAttempts",
   "localLogs",
-  "settings"
-]
+  "settings",
+];
 
 export async function openDatabase(): Promise<IDBDatabase> {
   return await new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION)
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onupgradeneeded = () => {
-      const db = request.result
+      const db = request.result;
       for (const store of STORE_NAMES) {
         if (!db.objectStoreNames.contains(store)) {
-          db.createObjectStore(store, { keyPath: "id" })
+          db.createObjectStore(store, { keyPath: "id" });
         }
       }
-    }
+    };
 
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
-  })
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 }

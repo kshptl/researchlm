@@ -1,5 +1,5 @@
-import type { NodeTypes } from "@xyflow/react"
-import { ResearchlmNode } from "@/components/workspace/canvas/flow-nodes/researchlm-node"
+import type { NodeTypes } from "@xyflow/react";
+import { ResearchlmNode } from "@/components/workspace/canvas/flow-nodes/researchlm-node";
 
 export const nodeTypes: NodeTypes = {
   topic: ResearchlmNode,
@@ -8,4 +8,4 @@ export const nodeTypes: NodeTypes = {
   summary: ResearchlmNode,
   keyword: ResearchlmNode,
   portal: ResearchlmNode,
-}
+};

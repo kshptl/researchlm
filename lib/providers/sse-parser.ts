@@ -1,28 +1,30 @@
-export async function* parseSseDataLines(stream: ReadableStream<Uint8Array>): AsyncGenerator<string, void, void> {
-  const reader = stream.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ""
+export async function* parseSseDataLines(
+  stream: ReadableStream<Uint8Array>,
+): AsyncGenerator<string, void, void> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
 
   while (true) {
-    const { done, value } = await reader.read()
+    const { done, value } = await reader.read();
     if (done) {
-      break
+      break;
     }
 
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split(/\r?\n/)
-    buffer = lines.pop() ?? ""
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split(/\r?\n/);
+    buffer = lines.pop() ?? "";
 
     for (const line of lines) {
-      const trimmed = line.trim()
+      const trimmed = line.trim();
       if (!trimmed.startsWith("data:")) {
-        continue
+        continue;
       }
-      const payload = trimmed.slice(5).trim()
+      const payload = trimmed.slice(5).trim();
       if (!payload || payload === "[DONE]") {
-        continue
+        continue;
       }
-      yield payload
+      yield payload;
     }
   }
 }

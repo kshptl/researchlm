@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest"
-import { extractTextToNode } from "@/features/graph-model/text-extraction"
+import { describe, expect, it } from "vitest";
+import { extractTextToNode } from "@/features/graph-model/text-extraction";
 
 describe("text extraction", () => {
   const source = {
@@ -10,16 +10,16 @@ describe("text extraction", () => {
     content: "Some generated content",
     position: { x: 0, y: 0 },
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
+    updatedAt: new Date().toISOString(),
+  };
 
   it("creates extracted node with provenance", () => {
-    const extracted = extractTextToNode(source, "key detail")
-    expect(extracted.sourceNodeId).toBe(source.id)
-    expect(extracted.canvasId).toBe(source.canvasId)
-  })
+    const extracted = extractTextToNode(source, "key detail");
+    expect(extracted.sourceNodeId).toBe(source.id);
+    expect(extracted.canvasId).toBe(source.canvasId);
+  });
 
   it("rejects very short extraction span", () => {
-    expect(() => extractTextToNode(source, "ab")).toThrow(/at least/i)
-  })
-})
+    expect(() => extractTextToNode(source, "ab")).toThrow(/at least/i);
+  });
+});

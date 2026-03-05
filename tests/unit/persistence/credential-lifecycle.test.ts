@@ -1,32 +1,35 @@
-import { beforeEach, describe, expect, it } from "vitest"
-import { assertByokPolicy, CredentialPreflightError } from "@/lib/auth/byok-policy"
+import { beforeEach, describe, expect, it } from "vitest";
+import {
+  assertByokPolicy,
+  CredentialPreflightError,
+} from "@/lib/auth/byok-policy";
 import {
   clearCredentialsForTests,
   getActiveCredentialByProvider,
   getCredentialAuth,
   replaceCredential,
   revokeCredential,
-  saveCredential
-} from "@/lib/auth/credential-store"
+  saveCredential,
+} from "@/lib/auth/credential-store";
 
 describe("credential lifecycle", () => {
   beforeEach(() => {
-    clearCredentialsForTests()
-  })
+    clearCredentialsForTests();
+  });
 
   it("supports save, replace, and revoke transitions", () => {
-    const saved = saveCredential("openai", "api-key", "sk-valid")
-    expect(getActiveCredentialByProvider("openai")?.id).toBe(saved.id)
-    expect(getCredentialAuth(saved)?.type).toBe("api")
+    const saved = saveCredential("openai", "api-key", "sk-valid");
+    expect(getActiveCredentialByProvider("openai")?.id).toBe(saved.id);
+    expect(getCredentialAuth(saved)?.type).toBe("api");
 
-    const replaced = replaceCredential(saved.id, "sk-replaced")
-    expect(replaced?.status).toBe("active")
-    expect(getCredentialAuth(replaced!)?.type).toBe("api")
+    const replaced = replaceCredential(saved.id, "sk-replaced");
+    expect(replaced?.status).toBe("active");
+    expect(getCredentialAuth(replaced!)?.type).toBe("api");
 
-    const revoked = revokeCredential(saved.id)
-    expect(revoked?.status).toBe("revoked")
-    expect(getActiveCredentialByProvider("openai")).toBeUndefined()
-  })
+    const revoked = revokeCredential(saved.id);
+    expect(revoked?.status).toBe("revoked");
+    expect(getActiveCredentialByProvider("openai")).toBeUndefined();
+  });
 
   it("gates auth and permission failures during credential preflight", () => {
     expect(() =>
@@ -35,9 +38,9 @@ describe("credential lifecycle", () => {
         model: "gpt-4o-mini",
         intent: "prompt",
         messages: [{ role: "user", content: "Hello" }],
-        auth: { type: "api-key", credential: "" }
-      })
-    ).toThrowError(CredentialPreflightError)
+        auth: { type: "api-key", credential: "" },
+      }),
+    ).toThrowError(CredentialPreflightError);
 
     expect(() =>
       assertByokPolicy({
@@ -45,8 +48,8 @@ describe("credential lifecycle", () => {
         model: "gpt-4o-mini",
         intent: "prompt",
         messages: [{ role: "user", content: "Hello" }],
-        auth: { type: "api-key", credential: "revoked:token" }
-      })
-    ).toThrow(/revoked|permission/i)
-  })
-})
+        auth: { type: "api-key", credential: "revoked:token" },
+      }),
+    ).toThrow(/revoked|permission/i);
+  });
+});

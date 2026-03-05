@@ -1,14 +1,17 @@
-import { openDatabase } from "@/lib/idb/database"
+import { openDatabase } from "@/lib/idb/database";
 
-export async function runIntentTransaction<T>(storeNames: string[], fn: (tx: IDBTransaction) => T): Promise<T> {
-  const db = await openDatabase()
-  const tx = db.transaction(storeNames, "readwrite")
-  const result = fn(tx)
+export async function runIntentTransaction<T>(
+  storeNames: string[],
+  fn: (tx: IDBTransaction) => T,
+): Promise<T> {
+  const db = await openDatabase();
+  const tx = db.transaction(storeNames, "readwrite");
+  const result = fn(tx);
 
   await new Promise<void>((resolve, reject) => {
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error)
-  })
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
 
-  return result
+  return result;
 }

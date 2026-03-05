@@ -1,22 +1,27 @@
-import { vi } from "vitest"
-import React from "react"
+import { vi } from "vitest";
+import React from "react";
 
 vi.mock("@xyflow/react", () => {
   const ReactFlowProvider = ({ children }: { children: React.ReactNode }) =>
-    React.createElement("div", { "data-testid": "rf-provider" }, children)
+    React.createElement("div", { "data-testid": "rf-provider" }, children);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ReactFlow = (props: any) => {
     const nodes = (props.nodes ?? []) as Array<{
-      id: string
-      type?: string
-      data: Record<string, unknown>
-      selected?: boolean
-    }>
+      id: string;
+      type?: string;
+      data: Record<string, unknown>;
+      selected?: boolean;
+    }>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const nodeTypes = (props.nodeTypes ?? {}) as Record<string, React.ComponentType<any>>
-    const onNodeClick = props.onNodeClick as ((event: React.MouseEvent, node: { id: string }) => void) | undefined
-    const onPaneClick = props.onPaneClick as (() => void) | undefined
+    const nodeTypes = (props.nodeTypes ?? {}) as Record<
+      string,
+      React.ComponentType<any>
+    >;
+    const onNodeClick = props.onNodeClick as
+      | ((event: React.MouseEvent, node: { id: string }) => void)
+      | undefined;
+    const onPaneClick = props.onPaneClick as (() => void) | undefined;
 
     return React.createElement(
       "div",
@@ -24,12 +29,12 @@ vi.mock("@xyflow/react", () => {
         "data-testid": "rf-canvas",
         onClick: (e: React.MouseEvent) => {
           if ((e.target as HTMLElement).dataset?.testid === "rf-canvas") {
-            onPaneClick?.()
+            onPaneClick?.();
           }
         },
       },
       nodes.map((node) => {
-        const Component = nodeTypes[node.type ?? "default"]
+        const Component = nodeTypes[node.type ?? "default"];
         if (Component) {
           return React.createElement(
             "div",
@@ -37,34 +42,42 @@ vi.mock("@xyflow/react", () => {
               key: node.id,
               "data-testid": `rf-node-${node.id}`,
               onClick: (e: React.MouseEvent) => {
-                e.stopPropagation()
-                onNodeClick?.(e, node)
+                e.stopPropagation();
+                onNodeClick?.(e, node);
               },
             },
             React.createElement(Component, {
               id: node.id,
               data: node.data,
               selected: node.selected ?? false,
-            })
-          )
+            }),
+          );
         }
-        return React.createElement("div", { key: node.id, "data-testid": `rf-node-${node.id}` })
+        return React.createElement("div", {
+          key: node.id,
+          "data-testid": `rf-node-${node.id}`,
+        });
       }),
-      props.children as React.ReactNode
-    )
-  }
+      props.children as React.ReactNode,
+    );
+  };
 
-  const MiniMap = () => React.createElement("div", { "data-testid": "rf-minimap" })
+  const MiniMap = () =>
+    React.createElement("div", { "data-testid": "rf-minimap" });
 
-  const Background = () => React.createElement("div", { "data-testid": "rf-background" })
+  const Background = () =>
+    React.createElement("div", { "data-testid": "rf-background" });
 
-  const Handle = () => React.createElement("div", { "data-testid": "rf-handle" })
+  const Handle = () =>
+    React.createElement("div", { "data-testid": "rf-handle" });
 
-  const NodeResizer = () => React.createElement("div", { "data-testid": "rf-node-resizer" })
+  const NodeResizer = () =>
+    React.createElement("div", { "data-testid": "rf-node-resizer" });
 
-  const BaseEdge = () => React.createElement("path", { "data-testid": "rf-base-edge" })
+  const BaseEdge = () =>
+    React.createElement("path", { "data-testid": "rf-base-edge" });
 
-  const getBezierPath = () => ["M0,0 L1,1", 0, 0] as const
+  const getBezierPath = () => ["M0,0 L1,1", 0, 0] as const;
 
   const useInternalNode = () => ({
     measured: { width: 240, height: 160 },
@@ -73,7 +86,7 @@ vi.mock("@xyflow/react", () => {
     internals: {
       positionAbsolute: { x: 0, y: 0 },
     },
-  })
+  });
 
   const useReactFlow = () => ({
     setViewport: vi.fn(),
@@ -81,8 +94,10 @@ vi.mock("@xyflow/react", () => {
     fitView: vi.fn(),
     zoomIn: vi.fn(),
     zoomOut: vi.fn(),
-    screenToFlowPosition: vi.fn((position: { x: number; y: number }) => position),
-  })
+    screenToFlowPosition: vi.fn(
+      (position: { x: number; y: number }) => position,
+    ),
+  });
 
   return {
     ReactFlow,
@@ -99,5 +114,5 @@ vi.mock("@xyflow/react", () => {
     useInternalNode,
     Position: { Top: "top", Bottom: "bottom", Left: "left", Right: "right" },
     useReactFlow,
-  }
-})
+  };
+});

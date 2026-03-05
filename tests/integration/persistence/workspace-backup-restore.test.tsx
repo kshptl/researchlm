@@ -1,19 +1,19 @@
-import "@/tests/helpers/mock-react-flow"
-import React from "react"
-import { render, screen, waitFor } from "@testing-library/react"
-import { beforeEach, describe, expect, it } from "vitest"
-import WorkspacePage from "@/app/(workspace)/page"
-import { persistenceRepository } from "@/features/persistence/repository"
+import "@/tests/helpers/mock-react-flow";
+import React from "react";
+import { render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "vitest";
+import WorkspacePage from "@/app/(workspace)/page";
+import { persistenceRepository } from "@/features/persistence/repository";
 
 describe("workspace startup chat chooser", () => {
   beforeEach(async () => {
-    await persistenceRepository.clearStore("snapshots")
-    await persistenceRepository.clearStore("chatSessions")
-    await persistenceRepository.clearStore("settings")
-  })
+    await persistenceRepository.clearStore("snapshots");
+    await persistenceRepository.clearStore("chatSessions");
+    await persistenceRepository.clearStore("settings");
+  });
 
   it("shows recent chat list when persisted sessions exist", async () => {
-    const now = new Date().toISOString()
+    const now = new Date().toISOString();
     await persistenceRepository.saveChatSession({
       id: "chat-a",
       workspaceId: "chat-a",
@@ -26,7 +26,7 @@ describe("workspace startup chat chooser", () => {
       edgeCount: 1,
       provider: "openai",
       model: "gpt-4o-mini",
-    })
+    });
     await persistenceRepository.saveChatSession({
       id: "chat-b",
       workspaceId: "chat-b",
@@ -39,14 +39,14 @@ describe("workspace startup chat chooser", () => {
       edgeCount: 3,
       provider: "anthropic",
       model: "claude-3-5-sonnet-latest",
-    })
+    });
 
-    render(<WorkspacePage />)
+    render(<WorkspacePage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Resume chat")).toBeInTheDocument()
-      expect(screen.getByText("Recent Chat A")).toBeInTheDocument()
-      expect(screen.getByText("Recent Chat B")).toBeInTheDocument()
-    })
-  })
-})
+      expect(screen.getByText("Resume chat")).toBeInTheDocument();
+      expect(screen.getByText("Recent Chat A")).toBeInTheDocument();
+      expect(screen.getByText("Recent Chat B")).toBeInTheDocument();
+    });
+  });
+});

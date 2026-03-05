@@ -1,19 +1,23 @@
-export type ProviderAuthMethodType = "api" | "oauth" | "aws-profile" | "aws-env-chain"
+export type ProviderAuthMethodType =
+  | "api"
+  | "oauth"
+  | "aws-profile"
+  | "aws-env-chain";
 
 export type ProviderAuthMethod = {
-  id: string
-  label: string
-  type: ProviderAuthMethodType
-  description?: string
-  credentialLabel?: string
-  placeholder?: string
+  id: string;
+  label: string;
+  type: ProviderAuthMethodType;
+  description?: string;
+  credentialLabel?: string;
+  placeholder?: string;
   oauthFlow?: {
-    startAction: string
-    pollAction?: string
-    completeAction?: string
-    callbackInputLabel?: string
-  }
-}
+    startAction: string;
+    pollAction?: string;
+    completeAction?: string;
+    callbackInputLabel?: string;
+  };
+};
 
 const genericApiMethod: ProviderAuthMethod = {
   id: "manual-api-key",
@@ -21,7 +25,7 @@ const genericApiMethod: ProviderAuthMethod = {
   type: "api",
   credentialLabel: "API key",
   placeholder: "Enter API key",
-}
+};
 
 const openAiMethods: ProviderAuthMethod[] = [
   {
@@ -46,7 +50,7 @@ const openAiMethods: ProviderAuthMethod[] = [
     },
   },
   genericApiMethod,
-]
+];
 
 const anthropicMethods: ProviderAuthMethod[] = [
   {
@@ -72,7 +76,7 @@ const anthropicMethods: ProviderAuthMethod[] = [
     },
   },
   genericApiMethod,
-]
+];
 
 const githubCopilotOauthMethod: ProviderAuthMethod = {
   id: "github-copilot-oauth",
@@ -83,18 +87,18 @@ const githubCopilotOauthMethod: ProviderAuthMethod = {
     startAction: "copilot-start",
     pollAction: "copilot-poll",
   },
-}
+};
 
 const githubMethods: ProviderAuthMethod[] = [
   genericApiMethod,
   githubCopilotOauthMethod,
-]
+];
 
 const githubCopilotMethods: ProviderAuthMethod[] = [
   {
     ...githubCopilotOauthMethod,
   },
-]
+];
 
 const bedrockMethods: ProviderAuthMethod[] = [
   {
@@ -119,7 +123,7 @@ const bedrockMethods: ProviderAuthMethod[] = [
     type: "aws-env-chain",
     description: "Use AWS env vars, IAM role, web identity, or metadata chain.",
   },
-]
+];
 
 const exactMethodMap: Record<string, ProviderAuthMethod[]> = {
   openai: openAiMethods,
@@ -129,12 +133,14 @@ const exactMethodMap: Record<string, ProviderAuthMethod[]> = {
   "github-models": githubMethods,
   bedrock: bedrockMethods,
   "amazon-bedrock": bedrockMethods,
-}
+};
 
-export function getProviderAuthMethods(providerId: string): ProviderAuthMethod[] {
+export function getProviderAuthMethods(
+  providerId: string,
+): ProviderAuthMethod[] {
   if (exactMethodMap[providerId]) {
-    return exactMethodMap[providerId]
+    return exactMethodMap[providerId];
   }
 
-  return [genericApiMethod]
+  return [genericApiMethod];
 }

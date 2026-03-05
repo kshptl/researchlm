@@ -18,9 +18,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StreamRequest'
+              $ref: "#/components/schemas/StreamRequest"
       responses:
-        '200':
+        "200":
           description: SSE event stream
           content:
             text/event-stream:
@@ -38,30 +38,30 @@ paths:
 
                     event: done
                     data: {"requestId":"req_123","finishReason":"stop"}
-        '400':
+        "400":
           description: Invalid request payload
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '401':
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
           description: Missing or invalid BYOK credential
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '429':
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "429":
           description: Provider or route rate-limited
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-        '500':
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
           description: Upstream or internal failure
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
+                $ref: "#/components/schemas/ErrorEnvelope"
 
 components:
   schemas:
@@ -87,7 +87,7 @@ components:
           type: array
           minItems: 1
           items:
-            $ref: '#/components/schemas/Message'
+            $ref: "#/components/schemas/Message"
         stream:
           type: boolean
           default: true
@@ -101,7 +101,7 @@ components:
               type: integer
               minimum: 1
         auth:
-          $ref: '#/components/schemas/ProviderAuth'
+          $ref: "#/components/schemas/ProviderAuth"
         workspaceContext:
           type: object
           properties:

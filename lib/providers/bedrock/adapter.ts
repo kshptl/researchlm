@@ -3,78 +3,105 @@ import {
   ConverseStreamCommand,
   type Message,
   type ContentBlock,
-} from "@aws-sdk/client-bedrock-runtime"
-import { fromIni } from "@aws-sdk/credential-providers"
-import type { GenerationRequest } from "@/features/generation/types"
-import type { NormalizedStreamEvent, ProviderAdapter } from "@/lib/providers/adapter-types"
-import { isBedrockProvider } from "@/lib/providers/auth"
+} from "@aws-sdk/client-bedrock-runtime";
+import { fromIni } from "@aws-sdk/credential-providers";
+import type { GenerationRequest } from "@/features/generation/types";
+import type {
+  NormalizedStreamEvent,
+  ProviderAdapter,
+} from "@/lib/providers/adapter-types";
+import { isBedrockProvider } from "@/lib/providers/auth";
 
-const DEFAULT_REGION = "us-east-1"
+const DEFAULT_REGION = "us-east-1";
 
-function toBedrockMessages(request: GenerationRequest): { system: string; messages: Message[] } {
-  let system = ""
-  const messages: Message[] = []
+function toBedrockMessages(request: GenerationRequest): {
+  system: string;
+  messages: Message[];
+} {
+  let system = "";
+  const messages: Message[] = [];
 
   for (const msg of request.messages) {
     if (msg.role === "system") {
-      system = msg.content
-      continue
+      system = msg.content;
+      continue;
     }
 
-    const role = msg.role === "assistant" ? "assistant" : "user"
-    const content: ContentBlock[] = [{ text: msg.content }]
-    messages.push({ role, content })
+    const role = msg.role === "assistant" ? "assistant" : "user";
+    const content: ContentBlock[] = [{ text: msg.content }];
+    messages.push({ role, content });
   }
 
   // Bedrock requires at least one message
   if (messages.length === 0) {
-    messages.push({ role: "user", content: [{ text: "Hello" }] })
+    messages.push({ role: "user", content: [{ text: "Hello" }] });
   }
 
-  return { system, messages }
+  return { system, messages };
 }
 
-async function* streamBedrock(request: GenerationRequest): AsyncGenerator<NormalizedStreamEvent, void, void> {
-  const requestId = crypto.randomUUID()
+async function* streamBedrock(
+  request: GenerationRequest,
+): AsyncGenerator<NormalizedStreamEvent, void, void> {
+  const requestId = crypto.randomUUID();
 
   yield {
     type: "start",
-    data: { requestId, provider: "bedrock", model: request.model, intent: request.intent },
-  }
+    data: {
+      requestId,
+      provider: "bedrock",
+      model: request.model,
+      intent: request.intent,
+    },
+  };
 
   if (request.auth.type === "api-key" && request.auth.credential.trim()) {
-    process.env.AWS_BEARER_TOKEN_BEDROCK = request.auth.credential.trim()
+    process.env.AWS_BEARER_TOKEN_BEDROCK = request.auth.credential.trim();
   }
 
   const client = new BedrockRuntimeClient({
-    region: request.auth.type === "aws-profile" ? request.auth.region ?? process.env.AWS_REGION ?? DEFAULT_REGION : process.env.AWS_REGION ?? DEFAULT_REGION,
-    ...(request.auth.type === "aws-profile" ? { credentials: fromIni({ profile: request.auth.profile }) } : {}),
-  })
+    region:
+      request.auth.type === "aws-profile"
+        ? (request.auth.region ?? process.env.AWS_REGION ?? DEFAULT_REGION)
+        : (process.env.AWS_REGION ?? DEFAULT_REGION),
+    ...(request.auth.type === "aws-profile"
+      ? { credentials: fromIni({ profile: request.auth.profile }) }
+      : {}),
+  });
 
-  const { system, messages } = toBedrockMessages(request)
+  const { system, messages } = toBedrockMessages(request);
 
   const command = new ConverseStreamCommand({
     modelId: request.model,
     messages,
     ...(system ? { system: [{ text: system }] } : {}),
-  })
+  });
 
-  const response = await client.send(command)
+  const response = await client.send(command);
 
   if (!response.stream) {
-    yield { type: "error", data: { message: "No stream returned from Bedrock" } }
-    yield { type: "done", data: { finishReason: "error" } }
-    return
+    yield {
+      type: "error",
+      data: { message: "No stream returned from Bedrock" },
+    };
+    yield { type: "done", data: { finishReason: "error" } };
+    return;
   }
 
   for await (const event of response.stream) {
     if (event.contentBlockDelta?.delta?.text) {
-      yield { type: "delta", data: { text: event.contentBlockDelta.delta.text } }
+      yield {
+        type: "delta",
+        data: { text: event.contentBlockDelta.delta.text },
+      };
     }
 
     if (event.messageStop) {
-      yield { type: "done", data: { finishReason: event.messageStop.stopReason ?? "stop" } }
-      return
+      yield {
+        type: "done",
+        data: { finishReason: event.messageStop.stopReason ?? "stop" },
+      };
+      return;
     }
 
     if (event.metadata?.usage) {
@@ -84,11 +111,11 @@ async function* streamBedrock(request: GenerationRequest): AsyncGenerator<Normal
           inputTokens: event.metadata.usage.inputTokens,
           outputTokens: event.metadata.usage.outputTokens,
         },
-      }
+      };
     }
   }
 
-  yield { type: "done", data: { finishReason: "stop" } }
+  yield { type: "done", data: { finishReason: "stop" } };
 }
 
 export const bedrockAdapter: ProviderAdapter = {
@@ -99,8 +126,8 @@ export const bedrockAdapter: ProviderAdapter = {
     supportsVision: true,
   },
   stream: streamBedrock,
-}
+};
 
 export function isBedrockRequest(request: GenerationRequest): boolean {
-  return isBedrockProvider(request.provider)
+  return isBedrockProvider(request.provider);
 }

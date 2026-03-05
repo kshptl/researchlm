@@ -1,4 +1,4 @@
-import "@testing-library/jest-dom"
+import "@testing-library/jest-dom";
 
 // Polyfill ResizeObserver for jsdom (required by @xyflow/react)
 if (typeof globalThis.ResizeObserver === "undefined") {
@@ -6,11 +6,14 @@ if (typeof globalThis.ResizeObserver === "undefined") {
     observe() {}
     unobserve() {}
     disconnect() {}
-  } as unknown as typeof globalThis.ResizeObserver
+  } as unknown as typeof globalThis.ResizeObserver;
 }
 
 // Polyfill matchMedia for jsdom (required by Sonner)
-if (typeof globalThis.window !== "undefined" && typeof globalThis.window.matchMedia === "undefined") {
+if (
+  typeof globalThis.window !== "undefined" &&
+  typeof globalThis.window.matchMedia === "undefined"
+) {
   Object.defineProperty(globalThis.window, "matchMedia", {
     writable: true,
     value: (query: string) => ({
@@ -21,7 +24,7 @@ if (typeof globalThis.window !== "undefined" && typeof globalThis.window.matchMe
       removeListener: () => {},
       addEventListener: () => {},
       removeEventListener: () => {},
-      dispatchEvent: () => false
-    })
-  })
+      dispatchEvent: () => false,
+    }),
+  });
 }

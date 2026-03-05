@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest"
-import { semanticDiveFromNode } from "@/features/hierarchy-model/semantic-dive"
+import { describe, expect, it } from "vitest";
+import { semanticDiveFromNode } from "@/features/hierarchy-model/semantic-dive";
 
 describe("semantic dive", () => {
   it("creates a child canvas and hierarchy link", () => {
@@ -9,8 +9,8 @@ describe("semantic dive", () => {
       topic: "Root",
       depth: 0,
       createdAt: "",
-      updatedAt: ""
-    }
+      updatedAt: "",
+    };
 
     const node = {
       id: "n1",
@@ -20,11 +20,11 @@ describe("semantic dive", () => {
       content: "Transportation",
       position: { x: 0, y: 0 },
       createdAt: "",
-      updatedAt: ""
-    }
+      updatedAt: "",
+    };
 
-    const result = semanticDiveFromNode(node, currentCanvas)
-    expect(result.canvas.parentCanvasId).toBe("c1")
-    expect(result.link.childCanvasId).toBe(result.canvas.id)
-  })
-})
+    const result = semanticDiveFromNode(node, currentCanvas);
+    expect(result.canvas.parentCanvasId).toBe("c1");
+    expect(result.link.childCanvasId).toBe(result.canvas.id);
+  });
+});
